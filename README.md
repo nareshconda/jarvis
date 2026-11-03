@@ -22,14 +22,14 @@ models through **Ollama**, and cloud models step in when you want them.
 Each feature turns on when you fill in its settings in `.env`; anything left empty stays off.
 
 ```
-            ┌──────────── your LAN ────────────┐
+             ┌──────────── your LAN ────────────┐
  phone/PC ─▶│  Jarvis server (Pi / NAS / box)  │──▶ cloud APIs (optional)
- browser    │   ├─ Ollama on PC 1  (slot heavy)│
-            │   ├─ Ollama on PC 2  (slot light)│
-            │   ├─ Ollama on a Mac (slot mac)  │
-            │   ├─ PC agent on each PC         │
-            │   └─ Home Assistant / Nextcloud… │
-            └──────────────────────────────────┘
+ browser     │   ├─ Ollama on PC 1  (slot heavy)│
+             │   ├─ Ollama on PC 2  (slot light)│
+             │   ├─ Ollama on a Mac (slot mac)  │
+             │   ├─ PC agent on each PC         │
+             │   └─ Home Assistant / Nextcloud… │
+             └──────────────────────────────────┘
 ```
 
 ## Quick start
