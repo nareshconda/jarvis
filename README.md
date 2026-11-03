@@ -108,7 +108,8 @@ See [SECURITY.md](SECURITY.md).
 
 ## Credits
 
-Started as a fork of [Infatoshi/llama-va](https://github.com/Infatoshi/llama-va) and grew from there.
+By Naresh Conda. Started as a fork of [Infatoshi/llama-va](https://github.com/Infatoshi/llama-va) and grew from there.
+Started off as a learning Hobby to understand how local AI and homelab works, now publishing this out to the wild as sharing is caring <3
 Uses Ollama, Flask, ComfyUI, AUTOMATIC1111/Forge, Kokoro, Home Assistant, Nextcloud and Immich.
 "Jarvis" is just the default name. Set `JARVIS_ASSISTANT_NAME` to anything you like.
 
