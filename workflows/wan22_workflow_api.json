@@ -1,0 +1,93 @@
+{
+  "37": {
+    "inputs": { "unet_name": "__HIGH_GGUF__" },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": { "title": "Wan 2.2 · High-Noise (GGUF)" }
+  },
+  "38": {
+    "inputs": { "unet_name": "__LOW_GGUF__" },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": { "title": "Wan 2.2 · Low-Noise (GGUF)" }
+  },
+  "39": {
+    "inputs": { "clip_name": "__CLIP_NAME__", "type": "wan" },
+    "class_type": "CLIPLoader",
+    "_meta": { "title": "UMT5-XXL text encoder" }
+  },
+  "40": {
+    "inputs": { "vae_name": "__VAE_NAME__" },
+    "class_type": "VAELoader",
+    "_meta": { "title": "Wan 2.1 VAE" }
+  },
+  "6": {
+    "inputs": { "text": "__PROMPT__", "clip": ["39", 0] },
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "Positive prompt" }
+  },
+  "7": {
+    "inputs": { "text": "__NEG__", "clip": ["39", 0] },
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "Negative prompt" }
+  },
+  "5": {
+    "inputs": { "width": __WIDTH__, "height": __HEIGHT__, "length": __LENGTH__, "batch_size": 1 },
+    "class_type": "EmptyHunyuanLatentVideo",
+    "_meta": { "title": "Empty latent video" }
+  },
+  "3": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": __SEED__,
+      "steps": __STEPS__,
+      "cfg": __CFG__,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 0,
+      "end_at_step": __HALF_STEPS__,
+      "return_with_leftover_noise": "enable",
+      "model": ["37", 0],
+      "positive": ["6", 0],
+      "negative": ["7", 0],
+      "latent_image": ["5", 0]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": { "title": "High-noise pass" }
+  },
+  "4": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": __SEED__,
+      "steps": __STEPS__,
+      "cfg": __CFG__,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": __HALF_STEPS__,
+      "end_at_step": 10000,
+      "return_with_leftover_noise": "disable",
+      "model": ["38", 0],
+      "positive": ["6", 0],
+      "negative": ["7", 0],
+      "latent_image": ["3", 0]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": { "title": "Low-noise pass" }
+  },
+  "8": {
+    "inputs": { "samples": ["4", 0], "vae": ["40", 0] },
+    "class_type": "VAEDecode",
+    "_meta": { "title": "VAE decode" }
+  },
+  "9": {
+    "inputs": {
+      "frame_rate": __FPS__,
+      "loop_count": 0,
+      "filename_prefix": "jarvis_wan",
+      "format": "video/h264-mp4",
+      "pingpong": false,
+      "save_output": true,
+      "images": ["8", 0]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": { "title": "Combine → mp4" }
+  }
+}

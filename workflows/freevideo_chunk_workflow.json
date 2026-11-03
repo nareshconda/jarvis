@@ -1,0 +1,31 @@
+{
+  "1": {
+    "inputs": {
+      "text": "__PROMPT__",
+      "width": __WIDTH__,
+      "height": __HEIGHT__,
+      "seconds": __SECONDS__,
+      "seed": __SEED__,
+      "two_pass": __TWO_PASS__,
+      "base_steps": __BASE_STEPS__,
+      "refine_steps": __REFINE_STEPS__,
+      "force_regenerate": false,
+      "preview": false,
+      "refine_from": "",
+      "first": ["3", 0],
+      "media": ["2", 0]
+    },
+    "class_type": "FreeVideoGenerate",
+    "_meta": { "title": "FreeVideo · Generate & Preview" }
+  },
+  "2": {
+    "inputs": { "assets": "[]" },
+    "class_type": "FreeVideoMedia",
+    "_meta": { "title": "FreeVideo · Media" }
+  },
+  "3": {
+    "inputs": { "image": "__FIRST_IMAGE__", "upload": "image" },
+    "class_type": "LoadImage",
+    "_meta": { "title": "Continuity first frame" }
+  }
+}

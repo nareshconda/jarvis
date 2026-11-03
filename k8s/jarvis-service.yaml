@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jarvis-service
+  namespace: jarvis-server
+spec:
+  selector:
+    app: jarvis  
+  ports:
+    - name: http-port
+      protocol: TCP
+      port: 80         
+      targetPort: 5006 
+    - name: https-port
+      protocol: TCP
+      port: 443        
+      targetPort: 5446 

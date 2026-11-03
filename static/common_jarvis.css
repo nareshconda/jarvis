@@ -1,0 +1,128 @@
+/* ==========================================================================
+   1. GLOBAL VARIABLES & BODY THEME
+   ========================================================================== */
+:root {
+  --cyan: #00d2ff;
+  --green: #00ff6a;
+  --bg-dark: #050a0f;
+  --text-main: #88c0d0;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg-dark);
+  /* Global Grid restored for ALL interfaces */
+  background-image: 
+    linear-gradient(rgba(0, 210, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 210, 255, 0.04) 1px, transparent 1px);
+  background-size: 30px 30px;
+  color: var(--text-main);
+  font-family: 'Courier New', Courier, monospace;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; 
+}
+
+/* ==========================================================================
+   2. UNIFIED GLOBAL HEADER
+   ========================================================================== */
+.jarvis-global-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 30px;
+  background: linear-gradient(rgba(5, 10, 15, 0.75), rgba(5, 10, 15, 0.9)), radial-gradient(ellipse at top, #0b2233 0%, #050a0f 70%) center / cover no-repeat;
+  position: relative; 
+  z-index: 99999; 
+  width: 100%;
+}
+
+/* App container that sits UNDER the header */
+#app {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  /* Removed the hard height limit so flexbox naturally seals the gap */
+  position: relative;
+}
+
+/* ==========================================================================
+   3. DROPDOWN MENU
+   ========================================================================== */
+.header-dropdown-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hud-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--cyan);
+  text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+  letter-spacing: 2px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.hud-title:hover { color: #ffffff; text-shadow: 0 0 15px rgba(0, 210, 255, 0.8); }
+
+.header-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  margin-top: 15px; 
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(5, 10, 15, 0.95);
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  border-radius: 8px;
+  min-width: 240px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  z-index: 100000;
+}
+
+.header-dropdown-menu.show { display: block; }
+
+.header-dropdown-menu a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  color: var(--text-main);
+  text-decoration: none;
+  font-size: 15px;
+  border-bottom: 1px solid rgba(0, 210, 255, 0.1);
+  transition: all 0.2s;
+}
+
+.header-dropdown-menu a:hover { background: rgba(0, 210, 255, 0.15); color: var(--cyan); padding-left: 22px; }
+.header-dropdown-menu a:last-child { border-bottom: none; }
+
+/* ==========================================================================
+   4. STATUS INDICATORS & SCROLLBARS
+   ========================================================================== */
+.status-indicator { display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--green); }
+.orb { width: 12px; height: 12px; border-radius: 50%; background-color: var(--green); box-shadow: 0 0 10px var(--green); }
+.orb.pulse { animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { transform: scale(0.95); box-shadow: 0 0 5px var(--green); } 50% { transform: scale(1.2); box-shadow: 0 0 15px var(--green); } }
+
+* { scrollbar-width: thin; scrollbar-color: rgba(0, 210, 255, 0.4) var(--bg-dark); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); border-left: 1px solid rgba(0, 210, 255, 0.1); }
+::-webkit-scrollbar-thumb { background: rgba(0, 210, 255, 0.3); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 210, 255, 0.6); }
+.jarvis-global-header { padding-top: max(12px, env(safe-area-inset-top)); }

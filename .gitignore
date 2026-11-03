@@ -1,0 +1,28 @@
+# --- secrets: never commit ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+creds*.json
+token*.pickle
+config/*.json
+!config/*.example.json
+
+# --- runtime data (chats, memory, generated media) ---
+*.db
+*.db-journal
+generated/
+recordings/
+ha_www/
+screen_watches.json
+static/jarvis.mp3
+*.log
+
+# --- Python / OS ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store

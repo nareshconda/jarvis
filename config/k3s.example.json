@@ -1,0 +1,6 @@
+{
+  "_comment": "Copy to config/k3s.json. Spoken name -> Kubernetes namespace + deployment Jarvis may restart/scale. Remove this file to disable the k3s feature.",
+  "jarvis":         {"ns": "jarvis-server", "dep": "jarvis"},
+  "home assistant": {"ns": "automation",    "dep": "homeassistant"},
+  "grafana":        {"ns": "monitoring",    "dep": "grafana"}
+}

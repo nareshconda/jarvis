@@ -1,0 +1,29 @@
+{
+  "_comment": "Copy to config/home_assistant.json and edit. Every key is optional. Entity ids come from Home Assistant > Settings > Devices & services > Entities.",
+
+  "state_aliases": {
+    "tv": "media_player.living_room_tv",
+    "gaming pc": "switch.gaming_pc_power",
+    "kettle": "switch.kettle_plug"
+  },
+
+  "action_aliases": {
+    "turn_on|gaming pc": "switch.gaming_pc_power",
+    "turn_off|gaming pc": "switch.gaming_pc_power",
+    "reboot|gaming pc": "button.gaming_pc_reboot",
+    "suspend|gaming pc": "button.gaming_pc_suspend",
+    "turn_on|tv": "media_player.living_room_tv",
+    "turn_off|tv": "media_player.living_room_tv"
+  },
+
+  "light_aliases": {
+    "light.living_room": ["living room light", "main light", "ceiling light"],
+    "light.bedside": ["bedside light", "bed light"]
+  },
+
+  "status_devices": ["switch.gaming_pc_power", "media_player.living_room_tv"],
+
+  "alarm_lights": ["light.living_room", "light.hallway"],
+
+  "feedback_light": "light.living_room"
+}

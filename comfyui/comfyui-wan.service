@@ -1,0 +1,34 @@
+# comfyui-wan.service — auto-start standalone ComfyUI (Wan 2.2) on the LAN at boot.
+#
+# Wan 2.2 video engine for Jarvis on a headless PC. Keeps the
+# raw ComfyUI endpoint (0.0.0.0:8188) up every boot, including after JARVIS wakes
+# the PC over the network (Wake-on-LAN).
+#
+# Install (as the box's normal user):
+#   cp start_comfyui_wan.sh ~/ && chmod +x ~/start_comfyui_wan.sh
+#   mkdir -p ~/.config/systemd/user
+#   cp comfyui-wan.service ~/.config/systemd/user/
+#   sudo loginctl enable-linger $USER
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now comfyui-wan.service
+#
+# Check / follow:
+#   systemctl --user status comfyui-wan.service
+#   journalctl --user -u comfyui-wan.service -f
+
+[Unit]
+Description=ComfyUI (Wan 2.2, LAN :8188) for JARVIS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/start_comfyui_wan.sh
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=0
+# Low-VRAM is the default in the script; override here if needed, e.g.:
+# Environment=COMFY_EXTRA_ARGS=--novram
+
+[Install]
+WantedBy=default.target

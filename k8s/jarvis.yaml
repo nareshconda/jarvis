@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jarvis-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jarvis
+  namespace: jarvis-server
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jarvis
+  template:
+    metadata:
+      labels:
+        app: jarvis
+    spec:
+      serviceAccountName: jarvis-sa
+      hostNetwork: true 
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8
+          - 1.1.1.1
+      containers:
+      - name: jarvis
+        #image: jarvis-server:latest 
+        image: localhost:5000/jarvis-server:latest 
+        imagePullPolicy: Always
+        command: ["sh", "-c", "python jarvis_server.py"]
+        # set SSL_CERT_FILE=/certs/cert.pem and SSL_KEY_FILE=/certs/key.pem in .env for HTTPS
+        workingDir: /app
+        securityContext:
+          privileged: true 
+        volumeMounts:
+        - name: jarvis-code
+          mountPath: /app
+        - name: cert-volume
+          mountPath: /certs
+        - name: audio-dev
+          mountPath: /dev/snd
+        - name: ha-www
+          mountPath: /app/ha_www
+        - name: ssh-keys
+          mountPath: /root/.ssh
+          readOnly: true
+        - name: kubeconfig
+          mountPath: /root/.kube/config
+          readOnly: true
+        - name: hdd
+          mountPath: /mnt/data
+          readOnly: true
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "3Gi" 
+            cpu: "2000m"    
+      volumes:
+      - name: jarvis-code
+        hostPath:
+          path: /home/YOUR_USER/jarvis
+      - name: cert-volume
+        hostPath:
+          path: /home/YOUR_USER/certs
+      - name: audio-dev
+        hostPath:
+          path: /dev/snd
+      - name: ha-www
+        hostPath:
+          path: /srv/homeassistant/www
+      - name: ssh-keys
+        hostPath:
+          path: /home/YOUR_USER/.ssh
+      - name: kubeconfig
+        hostPath:
+          path: /home/YOUR_USER/.kube/config
+          type: File
+      - name: hdd
+        hostPath:
+          path: /mnt/data
+          type: Directory

@@ -1,0 +1,6 @@
+{
+  "_comment": "Copy to config/app_aliases.json. Extra spoken names -> app name as the PC agent lists it (GET http://PC:8765/tools -> apps).",
+  "browser": "firefox",
+  "music": "spotify",
+  "code": "visual studio code"
+}

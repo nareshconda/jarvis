@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+  <meta charset="UTF-8">
+  <title>Jarvis — Notes & Reminders</title>
+  <base href="{{ ingress_path }}/">
+  <link rel="icon" href="static/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="static/common_jarvis.css"> 
+  <style>
+    body {
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 100vh;
+}
+    .wrap { max-width: 1500px; width: 100%; margin: 0 auto; padding: 22px 26px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; flex: 1; align-items: start; }
+    @media (max-width:1100px){ .wrap{ grid-template-columns: 1fr 1fr; gap: 16px; } }
+    @media (max-width:760px){ .wrap{ grid-template-columns: 1fr; padding: 15px; gap: 18px; } }
+
+    /* 7-day calendar strip for appointments */
+    .cal-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 14px; }
+    .cal-day { text-align: center; padding: 6px 2px; border-radius: 6px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); font-size: 11px; }
+    .cal-day .dow { color: var(--text-main); opacity: 0.7; text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px; }
+    .cal-day .dom { color: #e5e9f0; font-size: 15px; font-weight: bold; margin-top: 2px; }
+    .cal-day.today { border-color: var(--cyan); background: rgba(0,210,255,0.12); }
+    .cal-day.has-event { box-shadow: inset 0 -3px 0 var(--green); }
+    .cal-day.has-event .dom { color: var(--green); }
+    .cal-day .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); margin: 3px auto 0; opacity: 0; }
+    .cal-day.has-event .dot { opacity: 1; }
+    
+    .card { background:rgba(23,35,47,0.55); border:1px solid rgba(0,210,255,0.15); border-radius:12px; padding:18px; box-shadow:0 4px 20px rgba(0,0,0,0.4); }
+    .card h2 { color:var(--cyan); font-size:16px; margin:0 0 14px; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid rgba(0,210,255,0.15); padding-bottom:10px; display:flex; align-items:center; gap:10px; }
+    .card.full { grid-column: auto; }
+
+    /* Notes card: same height as the Appointments card, list scrolls inside. */
+    #notes-card { display:flex; flex-direction:column; max-height:480px; }
+    #notes { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding-right:6px; }
+    #notes::-webkit-scrollbar { width:8px; }
+    #notes::-webkit-scrollbar-thumb { background:rgba(0,210,255,0.3); border-radius:4px; }
+    #notes::-webkit-scrollbar-track { background:rgba(0,0,0,0.2); }
+    /* Pinned (Nextcloud favorite) notes */
+    .item.pinned { border-left-color:#ffcf4d; }
+    .pin-btn.on { color:#ffcf4d; border-color:rgba(255,207,77,0.5); }
+    .pin-ico { color:#ffcf4d; margin-right:7px; }
+
+    .item { background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.05); border-left:3px solid var(--cyan); border-radius:8px; padding:12px 14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;}
+    .item-content { flex: 1; }
+    .item-actions { display:flex; gap:10px; margin-left: 15px; }
+    .item-actions button { background: none; border: 1px solid rgba(0,210,255,0.3); color: var(--text-main); border-radius: 4px; padding: 5px 8px; cursor: pointer; transition: 0.2s; }
+    .item-actions button:hover { background: rgba(0,210,255,0.2); color: var(--cyan); }
+    .item.done { opacity:0.5; border-left-color:#888; }
+    .item.done .summary { text-decoration:line-through; }
+    .empty { color:#557; font-style:italic; padding:10px 0; }
+    .action-icons { cursor:pointer; margin-left:auto; color:var(--cyan); display: flex; gap: 15px;}
+    .meta { color:var(--green); font-size:12px; margin-top:6px; opacity:0.85; }
+
+    .cal-day { cursor: pointer; }
+    .cal-day:hover { background: rgba(0,210,255,0.08); }
+    .cal-day.has-event { box-shadow: inset 0 -3px 0 var(--green); }
+    .cal-day.selected { border-color: var(--green); background: rgba(0,255,106,0.15); }
+
+    /* week navigation header */
+    .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .cal-nav i { cursor:pointer; color:var(--cyan); padding:6px 10px; border-radius:6px; transition:0.2s; }
+    .cal-nav i:hover { background:rgba(0,210,255,0.15); }
+    .cal-label { color:var(--text-main); font-size:13px; text-transform:uppercase; letter-spacing:1px; }
+
+    /* JARVIS CUSTOM MODAL STYLES */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-box { background: rgba(15, 25, 35, 0.95); border: 1px solid var(--cyan); border-radius: 12px; padding: 25px; width: 90%; max-width: 400px; box-shadow: 0 0 20px rgba(0, 210, 255, 0.2); display: flex; flex-direction: column; gap: 15px; }
+    /* Bigger modal for viewing/editing notes (fits long notes) */
+    .modal-box.big { max-width: 720px; }
+    .modal-box.big #modalDescInput { min-height: 360px; max-height: 70vh; font-size: 13.5px; line-height: 1.45; }
+    @media (max-width: 760px){ .modal-box.big { max-width: 94vw; } .modal-box.big #modalDescInput { min-height: 50vh; } }
+    .modal-box h3 { color: var(--cyan); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+    .modal-box input[type="text"], .modal-box input[type="datetime-local"] { background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 210, 255, 0.3); color: white; padding: 10px; border-radius: 6px; font-family: monospace; width: 100%; box-sizing: border-box; }
+    .modal-box input:focus { outline: none; border-color: var(--cyan); }
+    .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+    .modal-buttons button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn-cancel { background: transparent; color: #aaa; border: 1px solid #555 !important; }
+    .btn-save { background: rgba(0, 210, 255, 0.2); color: var(--cyan); border: 1px solid var(--cyan) !important; }
+    .btn-save:hover { background: var(--cyan); color: black; }
+    
+    /* Make standard date picker icon look better in dark mode */
+    ::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+
+    /* Item description (body) shown under the title */
+    .item .desc { color: var(--text-main); opacity: 0.8; font-size: 12.5px; margin-top: 6px; white-space: pre-wrap; line-height: 1.35; }
+    .item.done .desc { text-decoration: line-through; }
+    .item-content { min-width: 0; word-break: break-word; }
+    .item .summary { word-break: break-word; }
+
+    /* Mobile: tighten so the page shrinks to fit the screen */
+    @media (max-width: 760px){
+      .wrap { padding: 12px; gap: 14px; }
+      .card { padding: 13px; border-radius: 10px; }
+      .card h2 { font-size: 14px; margin-bottom: 10px; }
+      /* stack the text over the action buttons; the old flex-wrap collapsed
+         the text column to 0 width, forcing one character per line */
+      .item { padding: 10px 11px; flex-direction: column; align-items: stretch; }
+      .item-content { width: 100%; flex: none; min-width: 0; }
+      .item-actions { margin-left: 0; margin-top: 8px; width: 100%; justify-content: flex-end; }
+      .item-actions button { padding: 7px 11px; }   /* larger tap targets */
+      .cal-strip { gap: 3px; }
+      .cal-day { padding: 5px 1px; }
+      .cal-day .dom { font-size: 13px; }
+      .cal-day .dow { font-size: 8px; }
+      .modal-box { padding: 18px; max-width: 92vw; }
+      .action-icons { gap: 14px; font-size: 17px; }   /* easier to tap + / refresh */
+    }
+    @media (max-width: 420px){
+      .cal-day .dow { display: none; }   /* only day numbers on very narrow screens */
+    }
+  </style>
+</head>
+<body style="display: flex; flex-direction: column; min-height: 100vh; margin: 0;">
+
+  <div id="jarvisModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 id="modalTitle">Add Item</h3>
+      
+      <input type="text" id="modalTextInput" placeholder="Enter details...">
+
+      <div id="modalDescGroup" style="display: none;">
+          <label id="modalDescLabel" style="font-size: 12px; color: #888; margin-bottom: 5px; display: block;">Description (optional)</label>
+          <textarea id="modalDescInput" rows="4" placeholder="Add more detail..."
+                    style="background: rgba(0,0,0,0.5); border: 1px solid rgba(0,210,255,0.3); color: white; padding: 10px; border-radius: 6px; font-family: monospace; width: 100%; box-sizing: border-box; resize: vertical;"></textarea>
+      </div>
+
+      <div id="modalDateGroup" style="display: none;">
+          <label id="modalDateLabel" style="font-size: 12px; color: #888; margin-bottom: 5px; display: block;">Due Date / Time</label>
+          <input type="datetime-local" id="modalDateInput">
+      </div>
+      
+      <div id="modalEndDateGroup" style="display: none; margin-top: -5px;">
+          <label style="font-size: 12px; color: #888; margin-bottom: 5px; display: block;">End Date / Time</label>
+          <input type="datetime-local" id="modalEndDateInput">
+      </div>
+      
+      <div class="modal-buttons">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveModal()">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <header class="jarvis-global-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 10px 20px; box-sizing: border-box;">
+  <div style="width: 60px; display: flex; align-items: center; justify-content: flex-start;">
+    </div>
+    
+    <div class="header-dropdown-container" style="display: flex; flex-direction: column; align-items: center; position: relative;">
+      <div class="hud-title" onclick="toggleHeaderMenu()" style="font-size: 22px; font-weight: bold; white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #00d2ff; text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);">
+        NOTES & REMINDERS <i class="fas fa-caret-down" style="font-size: 0.6em;"></i>
+      </div>
+      <div id="headerDropdownMenu" class="header-dropdown-menu">
+        <a href="#" onclick="navTo(''); return false;"><i class="fas fa-comment-dots" style="width: 20px; text-align: center;"></i> Jarvis Chat</a>
+        <a href="#" onclick="navTo('/notes'); return false;"><i class="fas fa-sticky-note" style="width: 20px; text-align: center;"></i> Notes & Reminders</a>
+        <a href="#" onclick="navTo('/kiosk'); return false;"><i class="fas fa-tv" style="width: 20px; text-align: center;"></i> Kiosk Stream</a>
+        <a href="#" onclick="navTo('/camera'); return false;"><i class="fas fa-video" style="width: 20px; text-align: center;"></i> Camera Feed</a>
+        <a href="#" onclick="navTo('/cloud'); return false;"><i class="fas fa-cloud" style="width: 20px; text-align: center;"></i> Jarvis Cloud</a>
+        <a href="#" onclick="goToHA(); return false;"><i class="fas fa-home" style="width: 20px; text-align: center;"></i> HA Control Center</a>
+      </div>
+    </div>
+
+    <div style="width: 60px; display: flex; align-items: center; justify-content: flex-end;"></div>
+  </header>
+
+  <div class="wrap">
+    <div class="card" id="reminders-card">
+      <h2><i class="fas fa-bell"></i> Reminders
+        <div class="action-icons">
+            <i class="fas fa-plus" onclick="openModal('reminders')" title="Add Reminder"></i>
+            <i class="fas fa-sync-alt" onclick="loadData()" title="Refresh"></i>
+        </div>
+      </h2>
+      <div id="reminders"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="card" id="appointments-card">
+      <h2><i class="fas fa-calendar-day"></i> Appointments
+        <div class="action-icons">
+            <i class="fas fa-plus" onclick="openModal('calendar')" title="Add Appointment"></i>
+        </div>
+      </h2>
+      <div id="appointments"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="card full" id="notes-card">
+      <h2><i class="fas fa-note-sticky"></i> Notes
+        <div class="action-icons">
+            <i class="fas fa-plus" onclick="openModal('notes')" title="Add Note"></i>
+        </div>
+      </h2>
+      <div id="notes"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+ <script>
+    const basePath = window.location.pathname.replace(/\/notes\/?$/, '').replace(/\/$/, '');
+
+    function toggleHeaderMenu() { document.getElementById('headerDropdownMenu').classList.toggle('show'); }
+    window.onclick = function(e) { if (!e.target.closest('.header-dropdown-container')) { document.querySelectorAll('.header-dropdown-menu').forEach(d => d.classList.remove('show')); } }
+    
+    function navTo(path) { 
+        if (path === '') { window.location.href = basePath || '/'; } 
+        else { window.location.href = basePath + path; }
+    }
+
+    function goToHA() {
+        const host = window.location.hostname;
+        if (window.location.pathname.includes('/api/hassio_ingress')) { window.open('/', '_blank'); } 
+        else { fetch('api/devices').then(r => r.json()).then(c => { const l = (c.links || {}).home_assistant || {}; const h = window.location.hostname; const lan = h === 'localhost' || /^(192\.168\.|10\.)/.test(h); const u = (lan ? (l.lan || l.public) : (l.public || l.lan)); if (u) window.open(u, '_blank'); }); }
+    }
+
+    function esc(s){ return (s||"").replace(/</g,"<").replace(/>/g,">"); }
+    function fmt(iso){
+      if(!iso) return "";
+      try{ const d=new Date(iso); if(isNaN(d)) return iso;
+        return d.toLocaleString(undefined,{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      }catch(e){ return iso; }
+    }
+
+    function fmtTime(iso){
+      if(!iso) return "";
+      try{ const d=new Date(iso); if(isNaN(d)) return "";
+        return d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      }catch(e){ return ""; }
+    }
+
+    // "Sat 31 May · 14:00 – 15:30"  (falls back gracefully if no end time / all-day)
+    function fmtRange(startIso, endIso){
+      if(!startIso) return "";
+      try{
+        const s=new Date(startIso);
+        const datePart = s.toLocaleDateString(undefined,{weekday:'short',day:'2-digit',month:'short'});
+        // All-day events come through as a bare date (no "T" time component)
+        const isAllDay = !String(startIso).includes("T");
+        if(isAllDay) return `${datePart} · All day`;
+        const st = fmtTime(startIso);
+        const et = fmtTime(endIso);
+        if(et && et!==st) return `${datePart} · ${st} – ${et}`;
+        if(st) return `${datePart} · ${st}`;
+        return datePart;
+      }catch(e){ return fmt(startIso); }
+    }
+
+    // // Build the 7-day calendar strip; marks days that have appointments
+    // function renderCalStrip(events){
+    //   const days = [];
+    //   const today = new Date(); today.setHours(0,0,0,0);
+    //   // collect YYYY-MM-DD keys that have an event
+    //   const eventDays = new Set((events||[]).map(e=>{
+    //     const d = new Date(e.start); if(isNaN(d)) return null;
+    //     d.setHours(0,0,0,0); return d.toDateString();
+    //   }).filter(Boolean));
+
+    //   for(let n=0;n<7;n++){
+    //     const d=new Date(today); d.setDate(today.getDate()+n);
+    //     const isToday = n===0;
+    //     const has = eventDays.has(d.toDateString());
+    //     days.push(`
+    //       <div class="cal-day ${isToday?'today':''} ${has?'has-event':''}">
+    //         <div class="dow">${d.toLocaleDateString(undefined,{weekday:'short'})}</div>
+    //         <div class="dom">${d.getDate()}</div>
+    //         <div class="dot"></div>
+    //       </div>`);
+    //   }
+    //   return `<div class="cal-strip">${days.join("")}</div>`;
+    // }
+
+    let selectedDay = null;           // currently filtered day (Date string) or null
+    let allEvents = [];               // cache of all events
+    let weekOffset = 0;               // 0 = current week, -1 = last week, +1 = next week
+
+    function dayKey(d){ const x=new Date(d); x.setHours(0,0,0,0); return x.toDateString(); }
+
+    // The Monday that starts the visible week (shifted by weekOffset).
+    function weekStart(){
+      const t = new Date(); t.setHours(0,0,0,0);
+      const dow = (t.getDay() + 6) % 7;        // 0 = Monday
+      t.setDate(t.getDate() - dow + (weekOffset * 7));
+      return t;
+    }
+
+    function renderCalStrip(){
+      const today = dayKey(new Date());
+      const start = weekStart();
+      const eventDays = new Set((allEvents||[]).map(e=>{
+        const d = new Date(e.start); if(isNaN(d)) return null;
+        return dayKey(d);
+      }).filter(Boolean));
+
+      // month/year label for the visible week
+      const label = start.toLocaleDateString(undefined,{month:'short', year:'numeric'});
+
+      let days = [];
+      for(let n=0;n<7;n++){
+        const d=new Date(start); d.setDate(start.getDate()+n);
+        const key = d.toDateString();
+        const isToday = key===today;
+        const has = eventDays.has(key);
+        const isSel = selectedDay === key;
+        days.push(`
+          <div class="cal-day ${isToday?'today':''} ${has?'has-event':''} ${isSel?'selected':''}"
+               onclick="selectDay('${key}')">
+            <div class="dow">${d.toLocaleDateString(undefined,{weekday:'short'})}</div>
+            <div class="dom">${d.getDate()}</div>
+            <div class="dot"></div>
+          </div>`);
+      }
+
+      return `
+        <div class="cal-nav">
+          <i class="fas fa-chevron-left" onclick="changeWeek(-1)" title="Previous week"></i>
+          <span class="cal-label">${label}</span>
+          <i class="fas fa-chevron-right" onclick="changeWeek(1)" title="Next week"></i>
+        </div>
+        <div class="cal-strip">${days.join("")}</div>`;
+    }
+
+    function changeWeek(delta){
+      weekOffset += delta;
+      selectedDay = null;            // clear day filter when changing weeks
+      renderAppointments();
+    }
+
+    function selectDay(key){
+      selectedDay = (selectedDay === key) ? null : key;   // toggle
+      renderAppointments();
+    }
+
+    function renderAppointments(){
+      const ap = document.getElementById("appointments");
+      const strip = renderCalStrip();
+
+      // Determine what to show:
+      //  - a specific day if one is selected
+      //  - otherwise everything within the visible week
+      const start = weekStart();
+      const end = new Date(start); end.setDate(start.getDate()+7);
+
+      let shown;
+      if(selectedDay){
+        shown = allEvents.filter(e => dayKey(e.start) === selectedDay);
+      } else {
+        shown = allEvents.filter(e => {
+          const d = new Date(e.start);
+          return !isNaN(d) && d >= start && d < end;
+        });
+      }
+      // sort by start time
+      shown.sort((a,b)=> new Date(a.start) - new Date(b.start));
+
+      const note = selectedDay
+        ? `<div class="meta" style="margin-bottom:8px;cursor:pointer;color:var(--cyan)" onclick="selectDay('${selectedDay}')">
+             <i class="fas fa-filter"></i> ${new Date(selectedDay).toLocaleDateString(undefined,{weekday:'short',day:'2-digit',month:'short'})} — tap to show whole week</div>`
+        : '';
+
+      const emptyMsg = selectedDay ? 'No appointments on this day.' : 'Nothing scheduled this week.';
+      const list = shown.length ? shown.map(e => `
+          <div class="item">
+            <div class="item-content">
+                <div class="summary">${esc(e.summary)}</div>
+                <div class="meta"><i class="far fa-calendar"></i> ${fmtRange(e.start, e.end)}</div>
+            </div>
+            <div class="item-actions">
+                <button onclick="editFrom('calendar','${b64obj({summary:e.summary, start:e.start, end:e.end})}')" title="Edit"><i class="fas fa-pen"></i></button>
+            </div>
+          </div>`).join("")
+        : `<div class="empty">${emptyMsg}</div>`;
+
+      ap.innerHTML = strip + note + list;
+    }
+    
+    // --- MODAL LOGIC INSTEAD OF PROMPTS ---
+    let modalMode = '';
+
+    // editTarget holds the original item when we are editing (null = adding new)
+    let editTarget = null;
+
+    function openModal(mode, edit) {
+        modalMode = mode;
+        editTarget = edit || null;
+        document.getElementById('jarvisModal').style.display = 'flex';
+        // Enlarge the modal for notes so long notes are readable.
+        const _box = document.querySelector('#jarvisModal .modal-box');
+        if (_box) _box.classList.toggle('big', mode === 'notes');
+        document.getElementById('modalTextInput').value = '';
+        document.getElementById('modalDescInput').value = '';
+        document.getElementById('modalDateInput').value = '';
+        document.getElementById('modalEndDateInput').value = '';
+
+        const dateGroup = document.getElementById('modalDateGroup');
+        const endDateGroup = document.getElementById('modalEndDateGroup');
+        const descGroup = document.getElementById('modalDescGroup');
+        const title = document.getElementById('modalTitle');
+        const textInput = document.getElementById('modalTextInput');
+        const descInput = document.getElementById('modalDescInput');
+        const dateInput = document.getElementById('modalDateInput');
+        const dateLabel = document.getElementById('modalDateLabel');
+
+        // Adjust local timezone dynamically for defaults
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const localNowString = now.toISOString().slice(0,16);
+        const isEdit = !!editTarget;
+
+        // helper: ISO/HA datetime -> value for <input type=datetime-local>
+        const toLocalInput = (iso) => {
+            if (!iso) return '';
+            const dt = new Date(iso);
+            if (isNaN(dt)) return '';
+            dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+            return dt.toISOString().slice(0,16);
+        };
+
+        if (mode === 'notes') {
+            title.innerText = isEdit ? "Edit Note" : "Add Note";
+            textInput.placeholder = "Note title...";
+            descGroup.style.display = 'block';
+            dateGroup.style.display = 'none';
+            endDateGroup.style.display = 'none';
+            if (isEdit) { textInput.value = editTarget.summary || ''; descInput.value = editTarget.description || ''; }
+        }
+        else if (mode === 'reminders') {
+            title.innerText = isEdit ? "Edit Reminder" : "Add Reminder";
+            textInput.placeholder = "Reminder title...";
+            dateLabel.innerText = "Due Date & Time (Optional)";
+            descGroup.style.display = 'block';
+            dateGroup.style.display = 'block';
+            endDateGroup.style.display = 'none';
+            if (isEdit) {
+                textInput.value = editTarget.summary || '';
+                descInput.value = editTarget.description || '';
+                dateInput.value = toLocalInput(editTarget.due);
+            }
+        }
+        else if (mode === 'calendar') {
+            title.innerText = isEdit ? "Edit Appointment" : "Add Appointment";
+            textInput.placeholder = "Event title...";
+            dateLabel.innerText = "Start Date & Time";
+            descGroup.style.display = 'none';
+            dateGroup.style.display = 'block';
+            endDateGroup.style.display = 'block';
+            if (isEdit) {
+                textInput.value = editTarget.summary || '';
+                dateInput.value = toLocalInput(editTarget.start);
+                document.getElementById('modalEndDateInput').value = toLocalInput(editTarget.end);
+            } else {
+                dateInput.value = localNowString;
+                const end = new Date(now.getTime() + 3600000); // +1 hour
+                document.getElementById('modalEndDateInput').value = end.toISOString().slice(0,16);
+            }
+        }
+
+        textInput.focus();
+    }
+
+    function closeModal() {
+        document.getElementById('jarvisModal').style.display = 'none';
+    }
+
+    async function saveModal() {
+        const text = document.getElementById('modalTextInput').value.trim();
+        if (!text) {
+            alert("Please enter a title.");
+            return;
+        }
+
+        const desc = document.getElementById('modalDescInput').value.trim();
+        const dateVal = document.getElementById('modalDateInput').value;
+        const endDateVal = document.getElementById('modalEndDateInput').value;
+
+        closeModal(); // Hide modal immediately
+
+        if (modalMode === 'notes' || modalMode === 'reminders') {
+            let formattedDate = null;
+            if (modalMode === 'reminders' && dateVal) {
+                formattedDate = dateVal + ":00"; // API expects full timestamp
+            }
+            if (editTarget) {
+                // EDIT: rename + set description + (reminders) due date
+                await fetch(`${basePath}/api/todo/manage`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        list_type: modalMode, action: 'update',
+                        id: (editTarget && editTarget.id) || null,
+                        item: editTarget.summary, new_item: text,
+                        description: desc, due: formattedDate
+                    })
+                });
+            } else {
+                await fetch(`${basePath}/api/todo/manage`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ list_type: modalMode, action: 'add', item: text, description: desc, due: formattedDate })
+                });
+            }
+        }
+        else if (modalMode === 'calendar') {
+            // Calendar has no in-place update in HA, so an edit = remove old + add new.
+            if (editTarget && editTarget.summary) {
+                await fetch(`${basePath}/api/calendar/add`, {
+                    method: "POST", headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ summary: text, start: dateVal + ":00", end: endDateVal + ":00" })
+                });
+                // (old event is left in place if HA can't delete by summary; see note)
+            } else {
+                await fetch(`${basePath}/api/calendar/add`, {
+                    method: "POST", headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ summary: text, start: dateVal + ":00", end: endDateVal + ":00" })
+                });
+            }
+        }
+
+        editTarget = null;
+        loadData();
+    }
+    
+    // --- END MODAL LOGIC ---
+
+    // Open the edit modal from a base64 JSON blob on the button (quote-safe).
+    function editFrom(mode, b64) {
+        try { openModal(mode, JSON.parse(decodeURIComponent(escape(atob(b64))))); }
+        catch (e) { console.error('edit parse failed', e); }
+    }
+    function b64obj(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))); }
+
+    async function manageTodo(listType, action, itemName, status="") {
+        await fetch(`${basePath}/api/todo/manage`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ list_type: listType, action: action, item: itemName, status: status })
+        });
+        loadData();
+    }
+
+    // Pin / unpin a note -> toggles the Nextcloud 'favorite' star (syncs both ways).
+    async function pinNote(id, pinned) {
+        await fetch(`${basePath}/api/todo/manage`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ list_type: 'notes', action: 'pin', id: id, pinned: pinned })
+        });
+        loadData();
+    }
+
+    async function deleteNote(id) {
+        await fetch(`${basePath}/api/todo/manage`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ list_type: 'notes', action: 'remove', id: id })
+        });
+        loadData();
+    }
+
+    // Open a note: the list feed is titles-only (fast), so fetch the full body
+    // on demand, then show it in the (enlarged) modal.
+    async function openNote(id, title) {
+        let content = '';
+        try {
+            const r = await fetch(`${basePath}/api/notes/one?id=${encodeURIComponent(id)}`);
+            if (r.ok) { const j = await r.json(); content = j.content || ''; }
+        } catch (e) { console.error('note fetch failed', e); }
+        openModal('notes', { summary: title, description: content, id: id });
+    }
+
+    async function loadData(){
+      try {
+        const res = await fetch(`${basePath}/api/notes/data`);
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        const d = await res.json();
+
+        const rem = document.getElementById("reminders");
+        rem.innerHTML = d.reminders.length ? d.reminders.map(r => `
+            <div class="item ${r.status==='completed'?'done':''}">
+              <div class="item-content">
+                  <div class="summary">${esc(r.summary)}</div>
+                  ${r.description ? `<div class="desc">${esc(r.description)}</div>`:''}
+                  ${r.due ? `<div class="meta"><i class="far fa-clock"></i> ${fmt(r.due)}</div>`:''}
+              </div>
+              <div class="item-actions">
+                  <button onclick="manageTodo('reminders', 'update', '${esc(r.summary).replace(/'/g, "\\'")}', 'completed')" title="Mark Done"><i class="fas fa-check"></i></button>
+                  <button onclick="editFrom('reminders','${b64obj({summary:r.summary, description:r.description||'', due:r.due||''})}')" title="Edit"><i class="fas fa-pen"></i></button>
+                  <button onclick="manageTodo('reminders', 'remove', '${esc(r.summary).replace(/'/g, "\\'")}')" title="Delete"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>`).join("") : '<div class="empty">No reminders set.</div>';
+
+        // const ap = document.getElementById("appointments");
+        // const strip = renderCalStrip(d.events);
+        // const list = d.events.length ? d.events.map(e => `
+        //     <div class="item">
+        //       <div class="item-content">
+        //           <div class="summary">${esc(e.summary)}</div>
+        //           <div class="meta"><i class="far fa-calendar"></i> ${fmtRange(e.start, e.end)}</div>
+        //       </div>
+        //     </div>`).join("") : '<div class="empty">Nothing on the calendar.</div>';
+        // ap.innerHTML = strip + list;
+        
+        allEvents = d.events || [];
+        renderAppointments();
+
+        const nt = document.getElementById("notes");
+        nt.innerHTML = d.notes.length ? d.notes.map(n => {
+            const t = esc(n.summary).replace(/'/g, "\\'");
+            const id = n.id;
+            return `
+            <div class="item ${n.favorite?'pinned':''}">
+              <div class="item-content">
+                  <div class="summary note-title" style="cursor:pointer;"
+                       onclick="openNote(${id}, '${t}')"
+                       title="Click to open">${n.favorite?'<i class="fas fa-thumbtack pin-ico"></i>':''}${esc(n.summary)}</div>
+              </div>
+              <div class="item-actions">
+                  <button class="pin-btn ${n.favorite?'on':''}" onclick="pinNote(${id}, ${!n.favorite})" title="${n.favorite?'Unpin':'Pin to top'}"><i class="fas fa-thumbtack"></i></button>
+                  <button onclick="openNote(${id}, '${t}')" title="Open / Edit"><i class="fas fa-pen"></i></button>
+                  <button onclick="deleteNote(${id})" title="Delete"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>`;
+          }).join("") : '<div class="empty">No notes yet.</div>';
+
+      } catch(err) {
+        console.error(err);
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 15000); 
+</script>
+</body>
+</html>

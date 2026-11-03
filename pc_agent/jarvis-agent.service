@@ -1,0 +1,13 @@
+[Unit]
+Description=Jarvis PC agent (tool server)
+After=graphical-session.target network-online.target
+PartOf=graphical-session.target
+
+[Service]
+EnvironmentFile=%h/.config/jarvis/agent.env
+ExecStart=/usr/bin/python3 @DIR@/jarvis_pc_agent.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

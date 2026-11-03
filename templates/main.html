@@ -1,0 +1,2459 @@
+<html>
+<head>
+
+<!-- <base href="/"> --> <title>Jarvis</title>
+
+<link rel="icon" href="static/logo.png">
+<link rel="stylesheet" href="static/web_style_v9.0.css?v=1.5">
+<link rel="stylesheet" href="static/common_jarvis.css">
+<meta name="viewport" content="width=device-width, initial-scale=0.85, maximum-scale=1.0, viewport-fit=cover">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+
+<!--PWA Tags -->
+<meta name="viewport" content="width=device-width, initial-scale=0.85, maximum-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#050a0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Jarvis">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon-180.png">
+
+</head>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () =>
+      navigator.serviceWorker.register('/sw.js').catch(e => console.warn('SW failed', e))
+    );
+  }
+</script>
+<body>
+<div id="sidebar-backdrop"></div>
+<div id="app">
+  <aside id="sidebar">
+    <div id="authSection" style="padding: 10px; border-bottom: 1px solid #333; margin-bottom: 10px;">
+      <div id="authContent" style="display: flex; justify-content: space-between; align-items: center; font-size: 14px;">
+        <span>Checking sir...</span>
+      </div>
+    </div>
+   <div class="sidebar-pinned" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+    <button type="button" id="newChatBtn" style="margin-bottom: 0; flex: 1;">+ New chat</button>
+    
+    <i class="fas fa-sync-alt" style="font-size: 1.2em; cursor: pointer; color: #00d2ff;" onclick="refreshChatList(this)" title="Refresh Chat"></i>
+  </div>
+    <div id="chatList"></div>
+    
+  </aside>
+
+<aside id="right-sidebar" style="display: flex; flex-direction: column;">
+    
+    <div>
+      <div style="padding-bottom: 15px; border-bottom: 1px solid #333; margin-bottom: 15px; text-align: center;">
+        <h3 style="margin:0; font-family:monospace; color:#ffffff;">LLM Settings</h3>
+      </div>
+      
+      <div class="llm-grid">
+        <div class="llm-row active-tier" id="row-mac" onclick="selectTier('mac')">
+          <div class="llm-row-header">
+            <h4><span data-dev-name="mac">Mac</span> <span id="status-mac">⚪</span></h4>
+            <div class="speed-toggles">
+              <button type="button" class="s-btn active" onclick="setSpeed(event, 'mac', 'fast')">Fast</button>
+              <button type="button" class="s-btn" onclick="setSpeed(event, 'mac', 'better')">Better</button>
+            </div>
+          </div>
+          <div class="model-display" id="disp-mac"></div>
+        </div>
+
+        <div class="llm-row" id="row-light" onclick="selectTier('light')">
+          <div class="llm-row-header">
+            <h4><span data-dev-name="light">PC 2</span> <span id="status-light">⚪</span></h4>
+            <div class="speed-toggles">
+              <button type="button" class="s-btn" onclick="setSpeed(event, 'light', 'fast')">Fast</button>
+              <button type="button" class="s-btn active" onclick="setSpeed(event, 'light', 'better')">Better</button>
+            </div>
+          </div>
+          <div class="model-display" id="disp-light"></div>
+        </div>
+
+        <div class="llm-row" id="row-heavy" onclick="selectTier('heavy')">
+          <div class="llm-row-header">
+            <h4><span data-dev-name="heavy">PC 1</span> <span id="status-heavy">⚪</span></h4>
+            <div class="speed-toggles">
+              <button type="button" class="s-btn" onclick="setSpeed(event, 'heavy', 'fast')">Fast</button>
+              <button type="button" class="s-btn active" onclick="setSpeed(event, 'heavy', 'better')">Better</button>
+            </div>
+          </div>
+          <div class="model-display" id="disp-heavy"></div>
+        </div>
+
+        <div class="llm-row" id="row-cloud" onclick="selectTier('cloud')">
+          <div class="llm-row-header">
+            <h4><span data-dev-name="cloud">Cloud</span> <span id="status-cloud">⚪</span></h4>
+            <div class="speed-toggles">
+              <button type="button" class="s-btn" onclick="setSpeed(event, 'cloud', 'fast')">Fast</button>
+              <button type="button" class="s-btn active" onclick="setSpeed(event, 'cloud', 'better')">Better</button>
+            </div>
+          </div>
+          <div class="model-display" id="disp-cloud"></div>
+          <!-- <div class="seat-hint" id="cloud-seat-hint">Tap a model to include / exclude it from the merge</div> -->
+        </div>
+      </div>
+    </div>
+
+    <!-- v9.0 — Image Gen Settings (framed to match Video Gen Settings) -->
+    <div class="vgs">
+      <div class="vgs-head">
+        <h3><i class="fas fa-image"></i> Image Gen Settings</h3>
+      </div>
+
+      <div class="llm-grid sd-grid" style="display: flex; flex-direction: row; gap: 8px; justify-content: space-between; margin-bottom: 14px;">
+
+        <div class="llm-row" id="row-sd-mac" onclick="selectSdTier('mac')" style="flex: 1; padding: 10px; min-width: 0;">
+          <div class="llm-row-header" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; justify-content: center;">
+            <h4 style="font-size: 13px; text-align: center;"><span data-dev-name="mac">Mac</span> <span id="status-sd-mac">⚪</span></h4>
+          </div>
+          <div class="model-display" id="disp-sd-mac" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="llm-row" id="row-sd-heavy" onclick="selectSdTier('heavy')" style="flex: 1; padding: 10px; min-width: 0;">
+          <div class="llm-row-header" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; justify-content: center;">
+            <h4 style="font-size: 13px; text-align: center;"><span data-dev-name="heavy">Heavy</span> <span id="status-sd-heavy">⚪</span></h4>
+          </div>
+          <div class="model-display" id="disp-sd-heavy" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="llm-row" id="row-sd-light" onclick="selectSdTier('light')" style="flex: 1; padding: 10px; min-width: 0;">
+          <div class="llm-row-header" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; justify-content: center;">
+            <h4 style="font-size: 13px; text-align: center;"><span data-dev-name="light">Light</span> <span id="status-sd-light">⚪</span></h4>
+          </div>
+          <div class="model-display" id="disp-sd-light" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="llm-row active-tier" id="row-sd-cloud" onclick="selectSdTier('cloud')" style="flex: 1; padding: 10px; min-width: 0;">
+          <div class="llm-row-header" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; justify-content: center;">
+            <h4 style="font-size: 13px; text-align: center;">Cloud <span id="status-sd-cloud">🟢</span></h4>
+          </div>
+          <div class="model-display" id="disp-sd-cloud" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="llm-row" id="row-sd-banana" onclick="selectSdTier('banana')" style="flex: 1; padding: 10px; min-width: 0;">
+          <div class="llm-row-header" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; justify-content: center;">
+            <h4 style="font-size: 13px; text-align: center;">Nano <span id="status-sd-banana">🍌</span></h4>
+          </div>
+          <div class="model-display" id="disp-sd-banana" style="margin-top: 10px;"></div>
+        </div>
+
+      </div>
+
+      <div class="vgs-sec" style="margin-top: 4px;">
+        <div class="vgs-lbl">Denoise Strength</div>
+        <input type="number" id="denoise-strength" class="vgs-num wide" value="0.75" step="0.05" min="0" max="1">
+      </div>
+
+      <div class="vgs-sec last">
+        <div class="vgs-lbl">Resolution</div>
+        <div class="vgs-row">
+          <input type="number" id="img-width" class="vgs-num" value="1024">
+          <span class="vgs-x">×</span>
+          <input type="number" id="img-height" class="vgs-num" value="1024">
+        </div>
+        <select id="img-aspect" class="vgs-sel">
+          <option value="custom">Custom</option>
+          <option value="21:9">21:9 · Ultrawide</option>
+          <option value="16:9">16:9 · Landscape</option>
+          <option value="9:16">9:16 · Portrait</option>
+          <option value="1:1">1:1 · Square</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- v9.0 — Video Gen Settings (FreeVideo / MiniMax H3 on the Mac) -->
+    <div class="vgs">
+      <div class="vgs-head">
+        <h3><i class="fas fa-film"></i> Video Gen Settings</h3>
+      </div>
+
+      <!-- Device selector (mirrors Image Gen Settings) -->
+      <div class="llm-grid sd-grid" style="display:flex; flex-direction:row; gap:8px; justify-content:space-between; margin-bottom:14px;">
+        <div class="llm-row active-tier" id="row-vid-mac" onclick="selectVideoTier('mac')" style="flex:1; padding:10px; min-width:0;">
+          <div class="llm-row-header" style="border-bottom:none; padding-bottom:0; margin-bottom:0; justify-content:center;">
+            <h4 style="font-size:13px; text-align:center;"><span data-dev-name="mac">Mac</span> <span id="status-vid-mac">⚪</span></h4>
+          </div>
+          <div class="model-display" id="disp-vid-mac" style="margin-top:10px;"></div>
+        </div>
+        <div class="llm-row" id="row-vid-heavy" onclick="selectVideoTier('heavy')" style="flex:1; padding:10px; min-width:0;">
+          <div class="llm-row-header" style="border-bottom:none; padding-bottom:0; margin-bottom:0; justify-content:center;">
+            <h4 style="font-size:13px; text-align:center;"><span data-dev-name="heavy">Heavy</span> <span id="status-vid-heavy">⚪</span></h4>
+          </div>
+          <div class="model-display" id="disp-vid-heavy" style="margin-top:10px;"></div>
+        </div>
+        <div class="llm-row" id="row-vid-light" onclick="selectVideoTier('light')" style="flex:1; padding:10px; min-width:0;">
+          <div class="llm-row-header" style="border-bottom:none; padding-bottom:0; margin-bottom:0; justify-content:center;">
+            <h4 style="font-size:13px; text-align:center;"><span data-dev-name="light">Light</span> <span id="status-vid-light">⚪</span></h4>
+          </div>
+          <div class="model-display" id="disp-vid-light" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <!-- Resolution -->
+      <div class="vgs-sec">
+        <div class="vgs-lbl">Resolution</div>
+        <div class="vgs-row">
+          <input type="number" id="vid-width" class="vgs-num" value="960">
+          <span class="vgs-x">×</span>
+          <input type="number" id="vid-height" class="vgs-num" value="544">
+        </div>
+        <select id="vid-aspect" class="vgs-sel">
+          <option value="custom">Custom</option>
+          <option value="16:9" selected>16:9 · Landscape</option>
+          <option value="9:16">9:16 · Portrait</option>
+          <option value="1:1">1:1 · Square</option>
+        </select>
+      </div>
+
+      <!-- Duration -->
+      <div class="vgs-sec">
+        <div class="vgs-lbl">Duration</div>
+        <div class="vgs-row">
+          <input type="number" id="vid-seconds" class="vgs-num wide" value="5" min="1" max="30">
+          <span class="vgs-unit">sec</span>
+        </div>
+        <div id="vid-frames-hint" class="vgs-hint">≈ 120 frames @ 24fps</div>
+      </div>
+
+      <!-- Quality segmented bar -->
+      <div class="vgs-sec">
+        <div class="vgs-lbl">Quality</div>
+        <div class="seg4" id="vid-quality">
+          <button type="button" class="seg4-opt active" data-q="light">Light</button>
+          <button type="button" class="seg4-opt" data-q="medium">Medium</button>
+          <button type="button" class="seg4-opt" data-q="high">High</button>
+          <button type="button" class="seg4-opt" data-q="max">Max</button>
+        </div>
+        <div class="vgs-tp">
+          <span class="vgs-lbl-sm">Two-pass</span>
+          <div class="seg2" id="vid-two-pass-seg">
+            <button type="button" class="seg2-opt" data-tp="0">Off</button>
+            <button type="button" class="seg2-opt active" data-tp="1">On</button>
+          </div>
+        </div>
+        <div class="vgs-hint" id="vid-quality-hint">Light · 8 base / 3 refine · two-pass</div>
+        <input type="checkbox" id="vid-two-pass" checked hidden>
+      </div>
+
+      <!-- Advanced (manual steps) -->
+      <details class="vgs-adv">
+        <summary>Advanced</summary>
+        <div class="vgs-row gap">
+          <div class="vgs-col">
+            <div class="vgs-lbl-sm">Base steps</div>
+            <input type="number" id="vid-base-steps" class="vgs-num sm" value="8" min="1">
+          </div>
+          <div class="vgs-col">
+            <div class="vgs-lbl-sm">Refine steps</div>
+            <input type="number" id="vid-refine-steps" class="vgs-num sm" value="3" min="0">
+          </div>
+        </div>
+        <div class="vgs-hint">Editing these sets Quality to Custom.</div>
+      </details>
+
+      <!-- Long video (stitch) -->
+      <div class="vgs-sec">
+        <label class="vgs-check">
+          <input type="checkbox" id="vid-stitch"> <span>Long video (stitch clips)</span>
+        </label>
+        <div id="vid-stitch-box" class="vgs-stitch" style="display:none;">
+          <div class="vgs-lbl-sm">Total length</div>
+          <div class="vgs-row">
+            <input type="number" id="vid-total-seconds" class="vgs-num wide" value="30" min="5" max="600">
+            <span class="vgs-unit">sec</span>
+          </div>
+          <div class="vgs-hint" id="vid-stitch-hint">6 clips × 5s · last frame → next clip</div>
+        </div>
+      </div>
+
+      <!-- Seed -->
+      <div class="vgs-sec last">
+        <div class="vgs-lbl">Seed</div>
+        <input type="number" id="vid-seed" class="vgs-num wide" value="0" min="0" title="0 = random">
+        <div class="vgs-hint">0 = random each time</div>
+      </div>
+    </div>
+
+    <div style="margin-top: auto; padding-top: 20px; padding-bottom: 15px;">
+      <div style="text-align: center;">
+        Having issues using Jarvis ?<br>
+        <button type="button" style="background: #c23a22; color: #ffffff; margin-top: 15px; margin-bottom: 15px;" onclick="rebuildSystem()">Reboot Me !</button>
+      </div>
+      <footer style="text-align: center; color: #888; font-size: 12px; border-top: 1px solid #333; padding-top: 15px;">
+        <span id="footerName">Jarvis by Naresh Conda</span> · self-hosted assistant
+      </footer>
+    </div>
+    
+  </aside>
+
+ <main id="main">
+
+  <h2 style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 10px; box-sizing: border-box;">
+    
+    <div style="width: 60px; display: flex; align-items: center; justify-content: flex-start; height: 100%;">
+      <button id="sidebarToggle" aria-label="Toggle sidebar" style="background:none; border:none; color:inherit; padding:0; display: flex; align-items: center;">
+        <i class="fas fa-bars" style="font-size: 1.5em; cursor: pointer;"></i>
+      </button>
+    </div>
+ 
+    <div class="header-dropdown-container" style="display: flex; flex-direction: column; align-items: center; position: relative;">
+      
+      <div class="hud-title" onclick="toggleHeaderMenu()" style="font-size: 22px; font-weight: bold; white-space: nowrap; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #ffffff; text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);">
+        JARVIS CHAT <i class="fas fa-caret-down" style="font-size: 0.6em;"></i>
+      </div>
+      
+      <div id="llm-indicator" style="display: none;">Cloud - Better - ⚪</div>
+      
+      <div id="headerDropdownMenu" class="header-dropdown-menu">
+        <a href="#" onclick="navTo(''); return false;"><i class="fas fa-comment-dots" style="width: 20px; text-align: center;"></i> Jarvis Chat</a>
+        <a href="#" onclick="navTo('/notes'); return false;"><i class="fas fa-sticky-note" style="width: 20px; text-align: center;"></i> Notes & Reminders</a>
+        <a href="#" onclick="navTo('/kiosk'); return false;"><i class="fas fa-tv" style="width: 20px; text-align: center;"></i> Kiosk Stream</a>
+        <a href="#" onclick="goToOS(); return false;"><i class="fab fa-linux" style="width: 20px; text-align: center;"></i> Jarvis OS</a>
+        <a href="#" onclick="goToCloud(); return false;"><i class="fas fa-cloud" style="width: 20px; text-align: center;"></i> Jarvis Cloud</a>
+        <a href="#" onclick="goToHA(); return false;"><i class="fas fa-home" style="width: 20px; text-align: center;"></i> HA Control Center</a>
+      </div>
+    </div>
+
+    <div style="width: 60px; display: flex; align-items: center; justify-content: flex-end; height: 100%;">
+      <button id="rightSidebarToggle" title="LLM Configuration" style="background:none; border:none; color:inherit; padding:0;">
+        <i class="fas fa-sliders-h" style="font-size: 1.8em; cursor: pointer;"></i>
+      </button>
+    </div>
+  </h2>
+
+  <div class="chat-main-title-container" style="text-align: center; line-height: 1.1; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 8px;">
+      <span id="chatTitle" style="font-size: 15px; font-weight: bold; white-space: nowrap; color: #ffffff;">New Chat</span>
+      <i class="fas fa-sync-alt" style="font-size: 1em; cursor: pointer; color: #ffffff;" onclick="refreshCurrentChat(this)" title="Refresh Chat"></i>
+  </div>
+
+  <!-- web mode toggle: floats just below the chat title, above the chat -->
+  <div id="webModeBar">
+    <button type="button" id="webModeToggle" onclick="toggleWebMode()" title="Toggle web search">
+      <span id="webModeDot" class="wm-dot wm-off"></span>
+      <span id="webModeLabel">Offline (LLM only)</span>
+    </button>
+    <button type="button" id="imgEnhanceToggle" onclick="toggleImgEnhance()"
+            title="Enhance my prompt (image, chat &amp; agent)">
+      <span id="imgEnhanceDot" class="wm-dot wm-off"></span>
+      <span id="imgEnhanceLabel">Enhancer: Off</span>
+    </button>
+  </div>
+
+  <div id="r"></div>
+  <audio id="musicPlayer" controls style="width:90%; margin:10px auto; display:none; border-radius:8px;"></audio>
+
+  <!-- v8 — Chat / Agent mode toggle -->
+  <!-- <div id="modeBar">
+    <div id="modeToggle" class="mode-seg">
+      <button type="button" class="mode-opt active" data-mode="chat" onclick="setMode('chat')">
+        <i class="fas fa-comment-dots"></i> Chat
+      </button>
+      <button type="button" class="mode-opt" data-mode="agent" onclick="setMode('agent')">
+        <i class="fas fa-robot"></i> Agent
+        <span id="agentDot" class="agent-dot" title="Agent PC status">⚪</span>
+      </button>
+    </div>
+    <div id="agentBrainSeg" class="mode-seg brain-seg" style="display:none;">
+      <span class="brain-label">Brain:</span>
+      <button type="button" class="brain-opt active" data-brain="local" onclick="setAgentBrain('local')">Local</button>
+      <button type="button" class="brain-opt" data-brain="cloud" onclick="setAgentBrain('cloud')">Cloud</button>
+    </div>
+  </div> -->
+
+  <div id="modeBar">
+    <div id="modeToggle" class="mode-seg">
+      <button type="button" class="mode-opt active" data-mode="chat" onclick="setMode('chat')">
+        <i class="fas fa-comment-dots"></i> Chat
+      </button>
+      <button type="button" class="mode-opt" data-mode="agent" onclick="setMode('agent')">
+        <i class="fas fa-robot"></i> Agent
+      </button>
+      <button type="button" class="mode-opt" data-mode="image" onclick="setMode('image')">
+        <i class="fas fa-image"></i> Image
+      </button>
+      <button type="button" class="mode-opt" data-mode="video" onclick="setMode('video')">
+        <i class="fas fa-film"></i> Video
+      </button>
+    </div>
+
+    <div id="tierToggleSeg" class="mode-seg brain-seg">
+      <button type="button" class="brain-opt active" data-tier="mac" id="quick-tier-mac" onclick="setQuickTier('mac')">
+        <span data-dev-name="mac">Mac</span> <span id="quick-dot-mac" class="agent-dot">⚪</span>
+      </button>
+      <button type="button" class="brain-opt" data-tier="light" onclick="setQuickTier('light')">
+        <span data-dev-name="light">Light</span> <span id="quick-dot-light" class="agent-dot">⚪</span>
+      </button>
+      <button type="button" class="brain-opt" data-tier="heavy" onclick="setQuickTier('heavy')">
+        <span data-dev-name="heavy">Heavy</span> <span id="quick-dot-heavy" class="agent-dot">⚪</span>
+      </button>
+      <button type="button" class="brain-opt" data-tier="cloud" onclick="setQuickTier('cloud')">
+        Cloud <span id="quick-dot-cloud" class="agent-dot">⚪</span>
+      </button>
+      <button type="button" class="brain-opt" data-tier="banana" id="quick-tier-banana" onclick="setQuickTier('banana')" style="display:none;">
+        Banana <span id="quick-dot-banana" class="agent-dot">🍌</span>
+      </button>
+    </div>
+
+  </div>
+
+  <form id="f" enctype="multipart/form-data">
+    <button type="button" id="muteBtn" style="background: none; border: none; padding: 0;">
+      <i class="fas fa-volume-xmark" style="font-size: 3em; cursor: pointer;"></i>
+    </button>
+
+    <div class="textarea-wrapper">
+      <textarea id="t" placeholder="Type whatever...."></textarea>
+      <button type="button" id="expandBtn" title="Expand text box">
+        <i class="fas fa-up-right-and-down-left-from-center"></i>
+      </button>
+    </div>
+    
+    <input type="file" id="img" accept="image/*,.pdf,.txt,.docx" multiple hidden />
+
+    <!-- v9.0 — attachment thumbnails sit right here, where "Files: N" used to show -->
+    <div id="attachPreview" style="display:none; flex-wrap:wrap; gap:6px; align-items:center;"></div>
+
+    <button type="button" id="imgBtn" style="background: none; border: none; padding: 0;">
+      <i class="fas fa-camera" style="font-size: 3em; cursor: pointer;"></i>
+    </button>
+    
+    <button type="button" id="micBtn" style="background: none; border: none; padding: 0;">
+      <i class="fas fa-microphone" style="font-size: 3em; cursor: pointer;"></i>
+    </button>
+    
+    <button>Send</button>
+  </form>
+
+</main>
+</div>
+
+<!-- floating scroll-to-bottom arrow (shown only when scrolled up) -->
+<button id="scrollDownBtn" onclick="scrollChatToBottom()" title="Scroll to latest" aria-label="Scroll to latest">
+  <i class="fas fa-chevron-down"></i>
+</button>
+
+<script>
+
+// DYNAMIC PATH DETECTOR: Ensures API calls stay inside the HA Ingress tunnel
+const basePath = window.location.pathname.replace(/\/$/, '');
+
+async function fetchAndDisplayChatTitle(chatId) {
+    if (!chatId) {
+        document.getElementById('chatTitle').innerText = "New Chat";
+        return;
+    }
+    try {
+        const response = await fetch(`${basePath}/get_chat_title/${chatId}`);
+        if (!response.ok) {
+            console.error(`Error fetching chat title: ${response.status}`);
+            document.getElementById('chatTitle').innerText = "Error Loading Title";
+            return;
+        }
+        const data = await response.json();
+        document.getElementById('chatTitle').innerText = data.chatTitle || "New Chat";
+    } catch (error) {
+        console.error('Network or parsing error fetching chat title:', error);
+        document.getElementById('chatTitle').innerText = "Error Loading Title";
+    }
+}
+
+// ---- devices from the server (.env / setup.py) -----------------------------
+let JARVIS_CFG = { devices: [], links: {} };
+function devName(id) {
+  const d = (JARVIS_CFG.devices || []).find(x => x.id === id);
+  if (d && d.name) return d.name;
+  return ({ mac: 'Mac', heavy: 'PC 1', light: 'PC 2', cloud: 'Cloud' })[id] || id;
+}
+async function applyDeviceConfig() {
+  try {
+    const res = await fetch(`${basePath}/api/devices`);
+    if (!res.ok) return;
+    JARVIS_CFG = await res.json();
+  } catch (e) { console.warn('devices fetch failed:', e); return; }
+  const name = JARVIS_CFG.assistant || 'Jarvis';
+  document.title = name;
+  const fn = document.getElementById('footerName'); if (fn) fn.textContent = name;
+  for (const d of (JARVIS_CFG.devices || [])) {
+    document.querySelectorAll(`[data-dev-name="${d.id}"]`).forEach(el => {
+      el.textContent = d.name;
+      if (d.specs) el.title = d.specs;
+    });
+    if (!d.enabled) {
+      // hide every tile/button for a device slot that isn't configured
+      ['row-', 'row-sd-', 'row-vid-'].forEach(p => {
+        const el = document.getElementById(p + d.id); if (el) el.style.display = 'none';
+      });
+      document.querySelectorAll(`[data-tier="${d.id}"], [data-brain="${d.id}"]`).forEach(el => el.style.display = 'none');
+    }
+  }
+  const def = JARVIS_CFG.default_tier;
+  if (def && typeof llmConfig !== 'undefined' && !localStorage.getItem('jarvisTierChosen')) {
+    llmConfig.activeTier = def;
+    try { selectTier(def); } catch (e) {}
+  }
+}
+
+async function updatePcStatus() {
+  try {
+    const res = await fetch(`${basePath}/api/pc_status`);
+    if (!res.ok) return;
+    const data = await res.json();
+    
+    document.getElementById("status-light").innerText = data.old.icon;
+    document.getElementById("status-heavy").innerText = data.new.icon;
+    document.getElementById("status-sd-light").innerText = data.old.icon;
+    document.getElementById("status-sd-heavy").innerText = data.new.icon;
+    document.getElementById("status-cloud").innerText = data.cloud.icon;
+    // v9.0 — video device tiles share the same PC status
+    const _vl = document.getElementById("status-vid-light"); if (_vl) _vl.innerText = data.old.icon;
+    const _vh = document.getElementById("status-vid-heavy"); if (_vh) _vh.innerText = data.new.icon;
+    if (data.mac) {
+      const sMac = document.getElementById("status-mac");
+      const qMac = document.getElementById("quick-dot-mac");
+      if (sMac) sMac.innerText = data.mac.icon;
+      const sdMac = document.getElementById("status-sd-mac");
+      if (sdMac) sdMac.innerText = data.mac.icon;
+      const vMac = document.getElementById("status-vid-mac");
+      if (vMac) vMac.innerText = data.mac.icon;
+      if (qMac) qMac.innerText = data.mac.icon;
+    }
+
+    const qLight = document.getElementById("quick-dot-light");
+    const qHeavy = document.getElementById("quick-dot-heavy");
+    const qCloud = document.getElementById("quick-dot-cloud");
+    if (qLight) qLight.innerText = data.old.icon;
+    if (qHeavy) qHeavy.innerText = data.new.icon;
+    if (qCloud) qCloud.innerText = data.cloud.icon;
+
+    // const agentDot = document.getElementById("agentDot");
+    // if (agentDot) agentDot.innerText = data.old.icon;
+
+    updateLlmIndicator();
+  } catch (e) {
+    console.warn("pc_status fetch failed:", e);
+  }
+}
+
+function getIconFromOptionText(text) {
+  if (!text) return "⚪";
+  if (text.includes("🟢")) return "🟢";
+  if (text.includes("🔴")) return "🔴";
+  return "⚪";
+}
+
+function buildProcessingLine(text, isVision = false, isCode = false) {
+  const textLower = (text || "").toLowerCase();
+  
+  // Detect standard Stable Diffusion image generation commands
+  const isImageGen = /\b(generate|draw|create|make|change|turn|edit|regenerate)\b.*(image|picture|logo|painting|photo|scene)\b/i.test(textLower);
+
+  if (isImageGen && modelsData && modelsData.sd) {
+    const sdTier = llmConfig.sdTier || 'heavy';
+    
+    let name = 'Cloud';
+    if (['mac', 'heavy', 'light'].includes(sdTier)) name = devName(sdTier);
+
+    const iconSpan = document.getElementById(`status-sd-${sdTier}`);
+    const icon = iconSpan ? iconSpan.innerText : '⚪';
+    
+    // Explicitly define the model names so they never show as "undefined"
+    let modelName = modelsData.sd[sdTier];
+    if (sdTier === 'banana') modelName = 'Nano Banana Pro';
+    if (!modelName) modelName = 'Unknown Model';
+    
+    const isCloudTier = (sdTier === 'cloud' || sdTier === 'banana');
+    const toolName = isCloudTier ? 'Replicate' : 'Stable Diffusion';
+    const processingText = `Processing image generation request using ${toolName} and the ${modelName} model......`;
+
+    // Cloud models don't need a ping check, assume Online
+    if (isCloudTier) return `${name} is Online, ${processingText}`;
+    
+    if (icon.includes("🔴")) return `${name} is Offline, turning it on and ${processingText}`;
+    if (icon.includes("🟢")) return `${name} is Online, ${processingText}`;
+    return `${name} status unknown, Trying to ${processingText.toLowerCase()}`;
+  }
+
+  // --- Normal LLM Text Processing ---
+  const tier = llmConfig.activeTier; 
+  const speed = llmConfig[tier];     
+
+  let name = "Cloud";
+  if (["mac", "heavy", "light"].includes(tier)) name = devName(tier);
+
+  const iconSpan = document.getElementById(`status-${tier}`);
+  const icon = iconSpan ? iconSpan.innerText : '⚪';
+
+  let processingText = "Processing request......";
+
+  if (modelsData) {
+    const tierData = modelsData[tier][speed];
+
+    if (tier === 'cloud') {
+      const seatKeys = (speed === 'better') ? llmConfig.cloudSeats : llmConfig.fastSeats;
+      const picked = tierData.filter(m => seatKeys.includes(m.k)).map(m => m.n);
+      const list = picked.length > 1
+        ? picked.slice(0, -1).join(", ") + " and " + picked[picked.length - 1]
+        : (picked[0] || "Cloud Models");
+      processingText = (picked.length > 1)
+        ? `Processing request using ${list}, then merging......`
+        : `Processing request using ${list}......`;
+    } else {
+      // v8.9 — match by request KIND so combined labels ("Text + Vision") work
+      const kind = isVision ? 'Vision' : (isCode ? 'Code' : 'Text');
+      const targetModel = tierData.find(m => m.n.includes(kind));
+
+      if (targetModel) {
+        processingText = `Processing ${kind} Request using ${targetModel.m}......`;
+        // Mac Better flushes every model + purges memory before the 27B loads
+        if (tier === 'mac' && speed === 'better') {
+          processingText = `Freeing all memory, then processing ${kind} Request using ${targetModel.m}......`;
+        }
+      }
+    }
+  }
+
+  if (icon.includes("🔴")) return `${name} is Offline, turning it on and ${processingText}`;
+  if (icon.includes("🟢")) return `${name} is Online, ${processingText}`;
+  return `${name} status unknown, Trying to ${processingText.toLowerCase()}`;
+}
+
+window.addEventListener("load", () => {
+  applyDeviceConfig().finally(() => {
+    updatePcStatus();
+    setInterval(updatePcStatus, 10000);
+  });
+});
+
+let currentChatId = null;
+let currentChatTitle = null;
+
+async function checkAuthStatus() {
+  try {
+    const res = await fetch(`${basePath}/api/auth/me`);
+    const data = await res.json();
+    const content = document.getElementById('authContent');
+
+    if (data.username) {
+      content.innerHTML = `
+        <span>Hello, <b>${data.username}</b></span>
+        <button onclick="logout()" style="background:#ff4b2b; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-family:monospace;">Logout</button>
+      `;
+      
+      await refreshChatList();
+      const chatRes = await fetch(`${basePath}/api/chats`);
+      const chatData = await chatRes.json();
+      if (chatData.chats && chatData.chats.length) {
+        // v9.0 — prefer the chat we were last in (survives refresh) so an
+        // in-progress image/video re-attaches its bar; fall back to newest.
+        let _target = chatData.chats[0].id;
+        try {
+          const _saved = localStorage.getItem("lastChatId");
+          if (_saved && chatData.chats.some(c => String(c.id) === _saved)) _target = _saved;
+        } catch (e) {}
+        selectChat(_target);
+      }
+      else document.getElementById("newChatBtn").click();
+
+    } else {
+      content.innerHTML = `
+        <span>Anonymous</span>
+        <button onclick="login()" style="background:#00d2ff; color:black; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-weight:bold; font-family:monospace;">Login</button>
+      `;
+      document.getElementById('chatList').innerHTML = '<div style="padding:10px; opacity:0.5; font-size:12px;">Login to save history</div>';
+      startNewAnonymousChat();
+    }
+  } catch (err) { console.error("Auth check failed", err); }
+}
+
+function login() { window.location.href = `${basePath}/login`; }
+
+async function logout() {
+  await fetch(`${basePath}/api/logout`);
+  window.location.reload();
+}
+
+function startNewAnonymousChat() {
+  currentChatId = 'temp-' + Date.now();
+  document.getElementById('r').innerHTML = ''; 
+  document.getElementById('chatTitle').innerText = "Guest Chat";
+  
+  const msgDiv = document.createElement('div');
+  msgDiv.innerHTML = `<div style="color:#888; font-style:italic; margin-top:20px; text-align:center;">[Guest Mode: Chats will not be saved]</div>`;
+  document.getElementById('r').appendChild(msgDiv);
+}
+
+async function refreshChatList(iconEl) {
+  if (iconEl && iconEl.classList) iconEl.classList.add('spinning');
+  try {
+  const res = await fetch(`${basePath}/api/chats`);
+  const data = await res.json();
+
+  const list = document.getElementById("chatList");
+  list.innerHTML = "";
+
+  data.chats.forEach(c => {
+    const row = document.createElement("div");
+    row.className = "chat-row";
+
+    const tile = document.createElement("div");
+    tile.className = "chat-tile" + (c.id === currentChatId ? " active" : "");
+    tile.textContent = c.title || "Chat";
+    tile.onclick = () => selectChat(c.id);
+
+    const actions = document.createElement("div");
+    actions.className = "chat-actions";
+
+    const pinBtn = document.createElement("button");
+    pinBtn.className = "chat-action-btn";
+    
+    const isPinned = c.is_pinned === 1; 
+    if (isPinned) {
+      pinBtn.innerHTML = '<i class="fas fa-thumbtack" style="color: #f1c40f; font-size: 1em; cursor: pointer;"></i>';
+      pinBtn.title = "Unpin chat";
+    } else {
+      pinBtn.innerHTML = '<i class="fas fa-thumbtack" style="font-size: 1em; cursor: pointer;"></i>'; 
+      pinBtn.title = "Pin chat";
+    }
+
+    pinBtn.onclick = async (e) => {
+      e.stopPropagation(); 
+      try {
+        await fetch(`${basePath}/api/chat/${c.id}/pin`, { method: "POST" });
+        await refreshChatList(); 
+      } catch (err) {
+        console.error("Error toggling pin:", err);
+      }
+    };
+
+    const renameBtn = document.createElement("button");
+    renameBtn.className = "chat-action-btn";
+    renameBtn.innerHTML = '<i class="fas fa-edit" style="font-size: 1em; cursor: pointer;"></i>';
+    renameBtn.title = "Rename";
+    renameBtn.onclick = async (e) => {
+      e.stopPropagation();
+      const newTitle = prompt("Rename chat:", c.title || "");
+      if (!newTitle || !newTitle.trim()) return;
+
+      await fetch(`${basePath}/api/chats/${c.id}`, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ title: newTitle.trim() })
+      });
+
+      await refreshChatList();
+      if (c.id === currentChatId) {
+        await fetchAndDisplayChatTitle(currentChatId);
+      }
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "chat-action-btn";
+    deleteBtn.innerHTML = '<i class="fas fa-trash" style="font-size: 1em; cursor: pointer;"></i>';
+    deleteBtn.title = "Delete";
+    deleteBtn.onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm(`Delete "${c.title}"? This cannot be undone.`)) return;
+
+      await fetch(`${basePath}/api/chats/${c.id}`, { method: "DELETE" });
+
+      if (c.id === currentChatId) {
+        currentChatId = null;
+        const res2 = await fetch(`${basePath}/api/chats`);
+        const d2 = await res2.json();
+        if (d2.chats.length) {
+          await selectChat(d2.chats[0].id);
+        } else {
+          document.getElementById("newChatBtn").click();
+        }
+      } else {
+        await refreshChatList();
+      }
+    };
+
+    actions.appendChild(pinBtn);
+    actions.appendChild(renameBtn);
+    actions.appendChild(deleteBtn);
+
+    row.appendChild(tile);
+    row.appendChild(actions);
+
+    list.appendChild(row);
+  });
+  } finally {
+    if (iconEl && iconEl.classList) setTimeout(() => iconEl.classList.remove('spinning'), 400);
+  }
+}
+
+async function refreshCurrentChat(iconEl) {
+  if (iconEl && iconEl.classList) iconEl.classList.add('spinning');
+  try {
+    await refreshChatList();
+    if (currentChatId) {
+      await selectChat(currentChatId);
+    }
+  } catch (err) {
+    console.error("Failed to refresh chat:", err);
+  } finally {
+    if (iconEl && iconEl.classList) setTimeout(() => iconEl.classList.remove('spinning'), 400);
+  }
+}
+
+function renderUserBubble(text, fileNames) {
+  const safe = (text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const files = (fileNames && fileNames.length)
+    ? `<div style="margin-top:6px; font-size:12px; color:#aaa;">Files: ${fileNames.join(", ")}</div>`
+    : "";
+
+  return `
+    <br>
+    <div style="text-align: right;">
+      <span style="background-color: rgba(40, 40, 40, 0.5); padding: 10px; border-radius: 8px; display: inline-block;">
+        <strong style="color: #00FF00;">You:</strong>
+        <span style="color: #c5c6c7;">${safe}</span>
+        ${files}
+      </span>
+    </div>
+    <br>`;
+}
+
+// ---- Phase 1 (3): copy-to-clipboard for code blocks and whole messages ----
+function jarvisCopyText(text) {
+  // Clipboard ONLY. Must never touch the button's DOM - it used to overwrite
+  // the button's children via textContent, which deleted the icons for good.
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  }
+  fallbackCopy(text);
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea'); ta.value = text;
+  ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta);
+  ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
+}
+function makeCopyIconBtn(cls, getText) {
+  const b = document.createElement('button');
+  b.className = cls;
+  b.type = 'button';
+  b.title = 'Copy';
+  b.setAttribute('aria-label', 'Copy');
+  // Both icons + label live permanently in the DOM; CSS shows the right one
+  // based on the .copied class. Nothing is created/destroyed on click, so the
+  // 3s revert can never be lost to a re-render or a detached node.
+  b.innerHTML =
+    '<svg class="cp-ico cp-copy" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>' +
+    '<svg class="cp-ico cp-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
+    '<span class="copy-label">Copied!</span>';
+  // Revert is driven two independent ways so it can never stick:
+  //  (a) a 3s setTimeout, and (b) the CSS animationend event as a backup.
+  const revert = () => { b.classList.remove('copied'); };
+  b.addEventListener('animationend', revert);
+  b.onclick = (e) => {
+    e.stopPropagation();
+    jarvisCopyText(getText());
+    b.classList.remove('copied');
+    // force reflow so re-adding the class restarts the CSS animation every click
+    void b.offsetWidth;
+    b.classList.add('copied');
+    clearTimeout(b._t);
+    b._t = setTimeout(revert, 3000);
+  };
+  return b;
+}
+
+function addCopyButtons(root) {
+  (root || document).querySelectorAll('.jarvis-content').forEach(content => {
+    // one copy icon on its own line UNDER each code block
+    content.querySelectorAll('pre').forEach(pre => {
+      if (pre.dataset.copied === '1') return;
+      pre.dataset.copied = '1';
+      const bar = document.createElement('div');
+      bar.className = 'code-copy-bar';
+      bar.appendChild(makeCopyIconBtn('copy-icon-btn', () => pre.innerText));
+      if (pre.nextSibling) pre.parentNode.insertBefore(bar, pre.nextSibling);
+      else pre.parentNode.appendChild(bar);
+    });
+    // one copy icon on its own line UNDER the whole message
+    if (content.dataset.copied !== '1') {
+      content.dataset.copied = '1';
+      const bar = document.createElement('div');
+      bar.className = 'msg-copy-bar';
+      bar.appendChild(makeCopyIconBtn('copy-icon-btn', () => {
+        // copy the reply text only, excluding the copy-bar glyphs
+        const clone = content.cloneNode(true);
+        clone.querySelectorAll('.code-copy-bar, .msg-copy-bar').forEach(el => el.remove());
+        return clone.innerText.trim();
+      }));
+      content.appendChild(bar);
+    }
+  });
+}
+
+// Clean model formatting tics before markdown parsing (fence-aware):
+// drop '---' horizontal rules and rejoin table rows split by blank lines.
+// Repair OLD stored messages whose tables were rendered as separate pipe
+// paragraphs (and stray '---'). Runs on the final DOM, so it only ever touches
+// runs of "| ... |" paragraphs - code blocks, images, agent output are untouched.
+// Idempotent: correct new messages contain no pipe-paragraphs, so it's a no-op.
+function fixLegacyMarkdown(root) {
+  const isPipeRow = (s) => { s = (s || '').trim(); return s.startsWith('|') && (s.match(/\|/g) || []).length >= 2; };
+  const isSep = (cells) => cells.length > 0 && cells.every(c => c === '' || /^:?-{2,}:?$/.test(c));
+  const isSpacer = (el) => el && el.tagName === 'DIV' && el.children.length === 0 && !el.textContent.trim();
+
+  (root || document).querySelectorAll('.jarvis-content, .md').forEach(container => {
+    // 1) drop stray horizontal-rule paragraphs
+    container.querySelectorAll(':scope > p').forEach(p => {
+      if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test((p.textContent || '').trim())) p.remove();
+    });
+
+    // 2) rebuild runs of pipe-row <p> (spacer divs allowed between them) as tables
+    let node = container.firstElementChild;
+    while (node) {
+      if (node.tagName === 'P' && isPipeRow(node.textContent)) {
+        const run = [];
+        let cur = node;
+        while (cur) {
+          if (cur.tagName === 'P' && isPipeRow(cur.textContent)) { run.push(cur); cur = cur.nextElementSibling; }
+          else if (isSpacer(cur)) { run.push(cur); cur = cur.nextElementSibling; }   // absorb spacer, drop later
+          else break;
+        }
+        const rowEls = run.filter(el => el.tagName === 'P');
+        const rows = rowEls.map(el => el.textContent.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim()));
+        let sepIdx = -1;
+        rows.forEach((cells, idx) => { if (sepIdx < 0 && isSep(cells)) sepIdx = idx; });
+        const dataRows = rows.filter((cells) => !isSep(cells));
+        if (dataRows.length) {
+          const table = document.createElement('table');
+          table.className = 'md-table';
+          let body = dataRows;
+          if (sepIdx === 1) {                         // first row is a header
+            const thead = document.createElement('thead');
+            const htr = document.createElement('tr');
+            dataRows[0].forEach(c => { const th = document.createElement('th'); th.textContent = c; htr.appendChild(th); });
+            thead.appendChild(htr); table.appendChild(thead);
+            body = dataRows.slice(1);
+          }
+          const tbody = document.createElement('tbody');
+          body.forEach(r => { const tr = document.createElement('tr'); r.forEach(c => { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); }); tbody.appendChild(tr); });
+          table.appendChild(tbody);
+          container.insertBefore(table, run[0]);
+        }
+        const after = cur;              // continue after the run
+        run.forEach(el => el.remove());
+        node = after;
+      } else {
+        node = node.nextElementSibling;
+      }
+    }
+  });
+}
+
+function jarvisNormalizeMd(text) {
+  const segs = String(text).split(/(```[\s\S]*?```)/);   // keep code fences intact
+  for (let s = 0; s < segs.length; s += 2) {              // even segments = outside fences
+    let lines = segs[s].split(/\r?\n/).filter(ln => !/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(ln));
+    const isRow = ln => { const t = ln.trim(); return t.startsWith('|') && (t.match(/\|/g) || []).length >= 2; };
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+      out.push(lines[i]);
+      if (isRow(lines[i])) {
+        let j = i + 1;
+        while (j < lines.length && !lines[j].trim()) j++;
+        if (j < lines.length && isRow(lines[j])) i = j - 1;   // skip the blank gap
+      }
+    }
+    segs[s] = out.join('\n');
+  }
+  return segs.join('');
+}
+
+function renderJarvisBubble(contentHtml) {
+  return `
+    <div class="message" style="background-color: rgba(26, 83, 109, 0.4); padding: 10px; border-radius: 8px;">
+      <div style="font-weight:bold; color:#00ff6a; margin-bottom:6px;">Jarvis:</div>
+      <div class="jarvis-content">${contentHtml}</div>
+    </div>`;
+}
+
+// Scroll to bottom now, and again once any newly-added images finish loading.
+// Image bubbles have zero height until the PNG loads, so a single immediate
+// scroll lands halfway; this re-scrolls on each image's load event.
+// Keep the chat scroll area clear of the fixed bars so no bubble is hidden.
+// Heights are measured live (the mode bar wraps on narrow screens, the composer
+// can expand) so the padding is always correct - no magic numbers.
+function adjustChatInsets() {
+  const r = document.getElementById('r');
+  if (!r) return;
+  const f = document.getElementById('f');
+  const mb = document.getElementById('modeBar');
+  const wmb = document.getElementById('webModeBar');
+  const composerH = f ? f.getBoundingClientRect().height : 90;
+  const modeBarShown = mb && getComputedStyle(mb).display !== 'none';
+  const modeBarH = modeBarShown ? mb.getBoundingClientRect().height : 0;
+  const topH = wmb ? wmb.getBoundingClientRect().height : 0;
+  r.style.paddingBottom = (composerH + modeBarH + 18) + 'px';
+  const wmt = document.getElementById('webModeToggle');
+  r.style.paddingTop = (wmt ? wmt.getBoundingClientRect().height + 14 : 0) + 'px';
+}
+window.addEventListener('load', adjustChatInsets);
+window.addEventListener('resize', adjustChatInsets);
+(function observeInsets(){
+  if (!window.ResizeObserver) return;
+  const ro = new ResizeObserver(adjustChatInsets);
+  ['f', 'modeBar', 'webModeBar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) ro.observe(el);
+  });
+})();
+
+// show the floating scroll-down arrow only when scrolled away from the bottom
+function updateScrollDownBtn() {
+  const btn = document.getElementById('scrollDownBtn');
+  if (!btn) return;
+  const fromBottom = r.scrollHeight - r.scrollTop - r.clientHeight;
+  if (fromBottom > 250) btn.classList.add('show');
+  else btn.classList.remove('show');
+}
+(function initScrollDownBtn(){
+  const el = document.getElementById('r');
+  if (el) el.addEventListener('scroll', updateScrollDownBtn, { passive: true });
+})();
+
+function scrollChatToBottom() {
+  r.scrollTop = r.scrollHeight;
+  updateScrollDownBtn();
+  const imgs = r.querySelectorAll('img');
+  imgs.forEach(img => {
+    if (!img.complete) {
+      img.addEventListener('load', () => { r.scrollTop = r.scrollHeight; }, { once: true });
+      img.addEventListener('error', () => { r.scrollTop = r.scrollHeight; }, { once: true });
+    }
+  });
+}
+
+async function selectChat(chatId) {
+  currentChatId = chatId;
+  document.body.classList.remove("sidebar-open");
+  localStorage.setItem("sidebar", "closed");
+  // v9.0 — remember the active chat so a page refresh returns here (and the
+  // cross-device/refresh progress resume re-attaches to the right chat).
+  try { if (!String(chatId).startsWith("temp-")) localStorage.setItem("lastChatId", String(chatId)); } catch (e) {}
+
+  await refreshChatList();
+  await fetchAndDisplayChatTitle(chatId);
+
+  const res = await fetch(`${basePath}/api/chats/${chatId}/messages`);
+  const data = await res.json();
+
+  const r = document.getElementById("r");
+  r.innerHTML = "";
+
+  for (const m of data.messages) {
+    if (m.role === "user") {
+      r.innerHTML += renderUserBubble(m.content, []);
+    } else {
+      if (m.html && m.html.trim()) {
+        r.innerHTML += renderJarvisBubble(m.html);
+      } else {
+        const safe = (m.content || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        r.innerHTML += renderJarvisBubble(`<p>${safe}</p>`);
+      }
+    }
+  }
+
+  if (window.Prism) Prism.highlightAll();
+  fixLegacyMarkdown(r);
+  addCopyButtons(r);
+  adjustChatInsets();
+  scrollChatToBottom();
+
+  // v9.0 — if a media job is still running for this chat (started elsewhere),
+  // re-attach its progress bar and repaint when it finishes.
+  maybeResumeProgress(chatId);
+  // v9.1 — same for a background LLM reply (long code gen etc.).
+  maybeResumeLLM(chatId);
+}
+
+document.getElementById("newChatBtn").onclick = async () => {
+  if (!document.getElementById('authContent').innerHTML.includes('Logout')) {
+    startNewAnonymousChat();
+    return;
+  }
+
+  const res = await fetch(`${basePath}/api/chats`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({title: "New chat"})
+  });
+  const data = await res.json();
+  await refreshChatList();
+  await selectChat(data.chat_id);
+};
+
+window.addEventListener("load", checkAuthStatus);
+
+const f = document.getElementById('f');
+const i = document.getElementById('t');
+const r = document.getElementById('r');
+const imgBtn = document.getElementById("imgBtn");
+const imgInput = document.getElementById("img");
+const b = document.getElementById('micBtn');
+const muteBtn = document.getElementById('muteBtn');
+
+i.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault(); 
+    f.requestSubmit();  
+  }
+});
+
+imgInput.onchange = () => {
+  // Camera button always stays the camera icon; the thumbnails below show
+  // what's attached (replaces the old "Files: N selected" text label).
+  imgBtn.innerHTML = '<i class="fas fa-camera" style="font-size: 3em; cursor: pointer;"></i>';
+  renderAttachPreview();
+};
+
+imgBtn.onclick = () => imgInput.click();
+
+// v9.0 — thumbnail strip for attached images / files.
+const attachPreview = document.getElementById('attachPreview');
+let _attachUrls = [];   // object URLs to revoke between renders
+
+function renderAttachPreview() {
+  // free the previous render's object URLs so we don't leak memory
+  _attachUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (_) {} });
+  _attachUrls = [];
+
+  const files = imgInput.files ? Array.from(imgInput.files) : [];
+  if (!files.length) {
+    attachPreview.style.display = 'none';
+    attachPreview.innerHTML = '';
+    return;
+  }
+  attachPreview.style.display = 'flex';
+  attachPreview.innerHTML = '';
+
+  files.forEach((f, idx) => {
+    const chip = document.createElement('div');
+    chip.style.cssText =
+      'position:relative; width:44px; height:44px; border-radius:8px; overflow:hidden; ' +
+      'border:1px solid #2a3f4a; background:#0c1418; display:flex; align-items:center; ' +
+      'justify-content:center; flex:0 0 auto;';
+
+    if (f.type && f.type.startsWith('image/')) {
+      const url = URL.createObjectURL(f);
+      _attachUrls.push(url);
+      const im = document.createElement('img');
+      im.src = url;
+      im.title = f.name || 'image';
+      im.style.cssText = 'width:100%; height:100%; object-fit:cover; display:block;';
+      chip.appendChild(im);
+    } else {
+      // non-image (pdf / txt / docx): show an icon + short name
+      const ext = (f.name.split('.').pop() || 'file').toUpperCase();
+      chip.innerHTML =
+        '<div style="text-align:center; color:#7fd3e6; font-family:monospace; line-height:1.2;">' +
+        '<i class="fas fa-file" style="font-size:1.4em;"></i>' +
+        '<div style="font-size:9px; margin-top:2px;">' + ext + '</div></div>';
+      chip.title = f.name || 'file';
+    }
+
+    // remove (✕) button
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.textContent = '×';
+    x.title = 'Remove';
+    x.style.cssText =
+      'position:absolute; top:1px; right:1px; width:18px; height:18px; line-height:16px; ' +
+      'padding:0; border:none; border-radius:50%; background:rgba(0,0,0,0.65); color:#fff; ' +
+      'font-size:14px; cursor:pointer;';
+    x.onclick = (e) => { e.stopPropagation(); removeAttachment(idx); };
+    chip.appendChild(x);
+
+    attachPreview.appendChild(chip);
+  });
+}
+
+function removeAttachment(idx) {
+  const files = imgInput.files ? Array.from(imgInput.files) : [];
+  const dt = new DataTransfer();
+  files.forEach((f, i) => { if (i !== idx) dt.items.add(f); });
+  imgInput.files = dt.files;
+  imgInput.onchange();   // refresh label + strip
+}
+
+// v9.0 — paste images straight from the clipboard (screenshots, copied pics).
+// Pasted images are injected into the same #img <input> every send path reads,
+// so vision / OCR / img2img all work exactly as with the camera button.
+function addPastedFiles(fileList) {
+  if (!fileList || !fileList.length) return 0;
+  const dt = new DataTransfer();
+  // keep whatever is already attached
+  if (imgInput.files) for (const f of imgInput.files) dt.items.add(f);
+  let added = 0;
+  for (const f of fileList) {
+    // clipboard images usually arrive named "image.png"; give each a unique
+    // name so multiple pastes don't look like one file server-side.
+    let file = f;
+    const base = (f.name && f.name !== 'image.png') ? f.name
+               : `pasted-${Date.now()}-${added}.${(f.type.split('/')[1] || 'png')}`;
+    if (base !== f.name) {
+      try { file = new File([f], base, { type: f.type }); } catch (_) { file = f; }
+    }
+    dt.items.add(file);
+    added++;
+  }
+  if (added) {
+    imgInput.files = dt.files;
+    imgInput.onchange();   // refresh the "Files: N selected" label
+  }
+  return added;
+}
+
+function handlePaste(e) {
+  const cd = e.clipboardData || window.clipboardData;
+  if (!cd) return;
+  const imgs = [];
+  for (const item of cd.items || []) {
+    if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
+      const f = item.getAsFile();
+      if (f) imgs.push(f);
+    }
+  }
+  if (imgs.length) {
+    e.preventDefault();          // don't dump binary into the textarea
+    addPastedFiles(imgs);        // only swallow the paste when it's an image
+  }
+  // otherwise let normal text paste happen untouched
+}
+
+// One document-level listener: paste events bubble up from the textarea, so
+// this catches Ctrl/Cmd-V whether or not the box is focused, without
+// double-adding. Text paste is left untouched (we only preventDefault images).
+document.addEventListener('paste', handlePaste);
+
+let voiceEnabled = false;
+muteBtn.innerHTML = '<i class="fas fa-volume-xmark" style="font-size: 3em; cursor: pointer;"></i>';
+muteBtn.onclick = () => {
+  voiceEnabled = !voiceEnabled;
+  muteBtn.innerHTML = voiceEnabled
+    ? '<i class="fas fa-volume-high" style="font-size: 3em; cursor: pointer;"></i>'
+    : '<i class="fas fa-volume-xmark" style="font-size: 3em; cursor: pointer;"></i>';
+};
+
+const expandBtn = document.getElementById('expandBtn');
+expandBtn.onclick = () => {
+  const expanded = document.body.classList.toggle('composer-expanded');
+  expandBtn.title = expanded ? "Shrink text box" : "Expand text box";
+  if (expanded) i.focus();
+};
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.body.classList.contains('composer-expanded')) {
+    document.body.classList.remove('composer-expanded');
+    expandBtn.title = "Expand text box";
+  }
+});
+
+async function playTTS(text) {
+  try {
+    const res = await fetch(`${basePath}/api/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) throw new Error("TTS fetch failed");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.play().catch(err => console.error("Audio playback failed:", err));
+  } catch (err) {
+    console.error("TTS error:", err);
+    r.insertAdjacentHTML("beforeend", `<div class='message'>[Audio Error: ${err.message}]</div>`);
+  }
+}
+
+document.getElementById('img-aspect').addEventListener('change', (e) => {
+    const val = e.target.value;
+    const w = document.getElementById('img-width');
+    const h = document.getElementById('img-height');
+    if (val === '21:9') { w.value = 2560; h.value = 1080; }
+    else if (val === '16:9') { w.value = 1920; h.value = 1080; }
+    else if (val === '9:16') { w.value = 1080; h.value = 1920; }
+    else if (val === '1:1') { w.value = 1024; h.value = 1024; }
+  });
+
+// v9.0 — Video Gen Settings: quality presets, two-pass, aspect, long-video stitch.
+// FreeVideo derives frames from seconds at a fixed 24 fps, so there's no fps/
+// frames control. Quality presets drive base_steps / refine_steps / two_pass.
+const VIDEO_QUALITY = {
+  light:  { base: 8,  refine: 3, two: true  },
+  medium: { base: 12, refine: 4, two: true  },
+  high:   { base: 20, refine: 6, two: true  },
+  max:    { base: 30, refine: 8, two: true  },
+};
+(function initVideoSettings(){
+  const vw = document.getElementById('vid-width');
+  const vh = document.getElementById('vid-height');
+  const vsec = document.getElementById('vid-seconds');
+  const vhint = document.getElementById('vid-frames-hint');
+  const vasp = document.getElementById('vid-aspect');
+  const vbase = document.getElementById('vid-base-steps');
+  const vref  = document.getElementById('vid-refine-steps');
+  const vtp   = document.getElementById('vid-two-pass');          // hidden checkbox (source of truth)
+  const qhint = document.getElementById('vid-quality-hint');
+  if (!vw) return;
+
+  const updateFrames = () => {
+    const s = parseFloat(vsec.value) || 0;
+    if (vhint) vhint.textContent = s > 0 ? `≈ ${Math.round(s * 24)} frames @ 24fps` : '';
+  };
+  const setTwoPass = (on) => {
+    vtp.checked = !!on;
+    document.querySelectorAll('#vid-two-pass-seg .seg2-opt').forEach(b =>
+      b.classList.toggle('active', (b.dataset.tp === '1') === !!on));
+  };
+  const setQualityLabel = (name) => {
+    if (!qhint) return;
+    qhint.textContent = name === 'custom'
+      ? `Custom · ${vbase.value} base / ${vref.value} refine${vtp.checked ? ' · two-pass' : ''}`
+      : `${name[0].toUpperCase() + name.slice(1)} · ${vbase.value} base / ${vref.value} refine${vtp.checked ? ' · two-pass' : ''}`;
+  };
+  const markQuality = (q) => {
+    document.querySelectorAll('#vid-quality .seg4-opt').forEach(b =>
+      b.classList.toggle('active', b.dataset.q === q));
+  };
+  const applyQuality = (q) => {
+    const p = VIDEO_QUALITY[q]; if (!p) return;
+    vbase.value = p.base; vref.value = p.refine; setTwoPass(p.two);
+    markQuality(q); setQualityLabel(q);
+  };
+
+  // Quality segmented bar
+  document.querySelectorAll('#vid-quality .seg4-opt').forEach(b =>
+    b.addEventListener('click', () => applyQuality(b.dataset.q)));
+  // Two-pass Off/On
+  document.querySelectorAll('#vid-two-pass-seg .seg2-opt').forEach(b =>
+    b.addEventListener('click', () => { setTwoPass(b.dataset.tp === '1'); markQuality(''); setQualityLabel('custom'); }));
+  // Editing raw steps -> Custom
+  [vbase, vref].forEach(el => el && el.addEventListener('input', () => { markQuality(''); setQualityLabel('custom'); }));
+
+  // Aspect presets (~0.5 MP video-friendly sizes)
+  if (vasp) vasp.addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val === '16:9') { vw.value = 960; vh.value = 544; }
+    else if (val === '9:16') { vw.value = 544; vh.value = 960; }
+    else if (val === '1:1') { vw.value = 720; vh.value = 720; }
+  });
+
+  // Long-video stitch
+  const vstitch = document.getElementById('vid-stitch');
+  const vbox = document.getElementById('vid-stitch-box');
+  const vtotal = document.getElementById('vid-total-seconds');
+  const shint = document.getElementById('vid-stitch-hint');
+  const updateStitch = () => {
+    if (vbox) vbox.style.display = vstitch.checked ? '' : 'none';
+    const dur = Math.max(1, parseFloat(vsec.value) || 5);
+    const tot = Math.max(dur, parseFloat(vtotal.value) || 0);
+    const n = Math.max(1, Math.ceil(tot / dur));
+    if (shint) shint.textContent = `${n} clips × ${dur}s · last frame → next clip`;
+  };
+  if (vstitch) vstitch.addEventListener('change', updateStitch);
+  if (vtotal) vtotal.addEventListener('input', updateStitch);
+
+  vsec.addEventListener('input', () => { updateFrames(); updateStitch(); });
+  updateFrames(); applyQuality('light'); updateStitch();
+})();
+
+function toggleWebMode() {
+  llmConfig.webMode = (llmConfig.webMode === 'online') ? 'offline' : 'online';
+  const dot = document.getElementById('webModeDot');
+  const label = document.getElementById('webModeLabel');
+  const on = llmConfig.webMode === 'online';
+  dot.className = 'wm-dot ' + (on ? 'wm-on' : 'wm-off');
+  label.textContent = on ? 'Online (Web search)' : 'Offline (LLM only)';
+}
+
+// v9.0 — prompt enhancer toggle for ALL UI modes (image, chat, agent)
+function toggleImgEnhance() {
+  llmConfig.imgEnhance = !llmConfig.imgEnhance;
+  const dot = document.getElementById('imgEnhanceDot');
+  const label = document.getElementById('imgEnhanceLabel');
+  const on = llmConfig.imgEnhance;
+  if (dot) dot.className = 'wm-dot ' + (on ? 'wm-on' : 'wm-off');
+  if (label) label.textContent = on ? 'Enhancer: On' : 'Enhancer: Off';
+}
+
+// v8.5 — live agent progress helpers ------------------------------------------
+function escapeHtmlLite(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+/* function renderAgentProgress(p) {
+  const steps = (p && p.steps) || [];
+  const rows = steps.map(s => {
+    const mark = s.ok === true ? "✓" : (s.ok === false ? "✗" : "•");
+    const colour = s.ok === true ? "#00ff6a" : (s.ok === false ? "#ff6b6b" : "#00d2ff");
+    const label = escapeHtmlLite(s.action || s.plan || "");
+    const note = (s.plan && s.action) ? " — " + escapeHtmlLite(s.plan) : "";
+    return `<div style="opacity:0.9;padding-left:6px;"><span style="color:${colour};">${mark}</span> ${label}${note}</div>`;
+  }).join("");
+  const done = p && p.status === "done";
+  const cur = done ? "wrapping up…" : escapeHtmlLite((p && p.current) || "working…");
+  const spin = done ? "✓" : "⚙";
+  return `<div style="color:#00d2ff;font-style:italic;">${spin} Agent processing — ${cur}</div>${rows}`;
+} */
+
+// Render the live "Agent working" block with percentage and tqdm-style loading bar
+function renderAgentProgress(p) {
+  const steps = (p && p.steps) || [];
+  const currentStep = p ? (p.step || 0) : 0;
+  const maxSteps = p ? (p.max_steps || 20) : 20;
+  
+  // Calculate percentage
+  const pct = Math.min(100, Math.round((currentStep / maxSteps) * 100));
+
+  // HTML CSS Bar + tqdm-style meter
+  const progressBarHtml = `
+    <div class="jarvis-progress-wrapper" style="margin: 10px 0; font-family: monospace;">
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #00d2ff;">
+        <span style="font-weight: bold; min-width: 36px; color: #00ff6a;">${pct}%</span>
+        <div style="flex: 1; max-width: 280px; background: rgba(0, 210, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.4); border-radius: 4px; height: 12px; position: relative; overflow: hidden;">
+          <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #00d2ff, #00ff6a); transition: width 0.4s ease; box-shadow: 0 0 8px #00d2ff;"></div>
+        </div>
+        <span style="font-size: 11px; opacity: 0.8; color: #c5c6c7;">[${currentStep}/${maxSteps}]</span>
+      </div>
+    </div>`;
+
+  const rows = steps.map(s => {
+    const mark = s.ok === true ? "✓" : (s.ok === false ? "✗" : "•");
+    const colour = s.ok === true ? "#00ff6a" : (s.ok === false ? "#ff6b6b" : "#00d2ff");
+    const label = escapeHtmlLite(s.action || s.plan || "");
+    const note = (s.plan && s.action) ? " — " + escapeHtmlLite(s.plan) : "";
+    return `<div style="opacity:0.9;padding-left:6px;"><span style="color:${colour};">${mark}</span> ${label}${note}</div>`;
+  }).join("");
+
+  const done = p && p.status === "done";
+  const cur = done ? "wrapping up…" : escapeHtmlLite((p && p.current) || "working…");
+  const spin = done ? "✓" : "⚙";
+
+  // v10 — Stop button: ends the agent loop after the current step
+  const tid = escapeHtmlLite((p && p.task_id) || "");
+  const stopBtn = (!done && tid)
+    ? `<button class="agent-stop-btn" data-task="${tid}" onclick="stopAgentTask(this)"
+         title="Stop this agent task after the current step"
+         style="margin-left:10px;padding:2px 10px;font:600 11px monospace;color:#ff6b6b;
+                background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.6);
+                border-radius:4px;cursor:pointer;">■ Stop</button>`
+    : "";
+
+  return `
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+      <span style="color:#00d2ff;font-style:italic;font-weight:bold;">${spin} Agent processing — ${cur}</span>${stopBtn}
+    </div>
+    ${progressBarHtml}
+    ${rows}`;
+}
+
+// v10 — ask the server to stop the running agent task (takes effect after the
+// step that's in flight, so a click or keypress is never cut in half).
+async function stopAgentTask(btn) {
+  const id = btn && btn.dataset ? btn.dataset.task : "";
+  if (!id) return;
+  btn.disabled = true;
+  btn.textContent = "Stopping…";
+  try {
+    await fetch(`${basePath}/api/agent_stop/${encodeURIComponent(id)}`, { method: "POST" });
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = "■ Stop";
+  }
+}
+
+// v9.0 — poll /api/sd_progress and paint a live Stable Diffusion sampling bar
+// into the processing line (the same % you see in the Forge console).
+function startSdProgressPoll(procId, chatId) {
+  let stopped = false;
+  let seenRunning = false;
+  const tick = async () => {
+    if (stopped) return;
+    try {
+      const res = await fetch(`${basePath}/api/sd_progress/${encodeURIComponent(chatId)}`);
+      if (res.ok) {
+        const p = await res.json();
+        const el = document.getElementById(procId);
+        if (el && (p.status === "running" || p.status === "done")) {
+          seenRunning = true;
+          const isVid = (p.kind === "video");
+          const label = isVid ? "Generating video" : "Generating image";
+          const pct = Math.max(0, Math.min(100, Number(p.progress) || 0));
+          // Video on the light PC spends minutes loading the model before the
+          // first sampling step fires, so show a clear "loading" phase at step 0
+          // instead of a frozen-looking 0%.
+          const loading = (isVid && (!p.total || !p.step));
+          const steps = (p.total && p.step) ? ` — step ${p.step}/${p.total}` : "";
+          const eta = (p.eta && p.eta > 0.1 ? ` · ~${p.eta}s left` : "");
+          const detail = loading ? " — loading model… (first steps take a few minutes)" : `${steps}${eta}`;
+          el.innerHTML =
+            `<div style="color:#00d2ff;">${label} ${pct.toFixed(0)}%${detail}</div>` +
+            `<div style="height:8px;background:rgba(0,210,255,0.12);border-radius:4px;` +
+            `margin-top:6px;overflow:hidden;position:relative;">` +
+            (loading
+              ? `<div style="position:absolute;top:0;left:-50%;width:50%;height:100%;` +
+                `background:linear-gradient(90deg,transparent,#00d2ff,#00ff6a,transparent);` +
+                `animation:barProgress 1.5s infinite linear;"></div>`
+              : `<div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#00d2ff,#00ff6a);` +
+                `transition:width .3s ease;"></div>`) +
+            `</div>`;
+        }
+        if (p.status === "done" && seenRunning) { stopped = true; return; }
+      }
+    } catch (e) { /* keep polling */ }
+    if (!stopped) setTimeout(tick, 700);
+  };
+  setTimeout(tick, 400);
+  return { stop() { stopped = true; } };
+}
+
+// v9.0 — Cross-device resume. A video/image job runs server-side keyed by
+// chat_id, so if one was started on another device/tab and is still running
+// when this chat opens, re-attach the live progress bar here and repaint the
+// chat (the finished media is saved as a new assistant message) once it lands.
+const _resumeActive = {};
+async function maybeResumeProgress(chatId) {
+  if (!chatId || String(chatId).startsWith("temp-")) return;
+  if (jarvisSending && chatId === currentChatId) return;   // a live send owns the bar here
+  if (_resumeActive[chatId]) return;                        // already re-attached
+
+  let p0;
+  try {
+    const res = await fetch(`${basePath}/api/sd_progress/${encodeURIComponent(chatId)}`);
+    if (!res.ok) return;
+    p0 = await res.json();
+  } catch (e) { return; }
+  if (!p0 || p0.status !== "running") return;               // nothing in flight
+
+  _resumeActive[chatId] = true;
+  const r = document.getElementById("r");
+  const procId = "resume_" + Date.now();
+  const label = (p0.kind === "video")
+      ? "🎬 Video generating on another device — resuming progress…"
+      : "🎨 Image generating on another device — resuming progress…";
+  r.innerHTML += `<div id="${procId}" style="color:#999;font-style:italic;">${label}</div>`;
+  scrollChatToBottom();
+
+  const bar = startSdProgressPoll(procId, chatId);
+
+  // Baseline message count so we can detect when the finished media is saved.
+  let base = 0;
+  try {
+    const mr = await fetch(`${basePath}/api/chats/${encodeURIComponent(chatId)}/messages`);
+    if (mr.ok) base = ((await mr.json()).messages || []).length;
+  } catch (e) { /* best effort */ }
+
+  const deadline = Date.now() + 25 * 60 * 1000;             // hard safety cap
+  const stopResume = (repaint) => {
+    if (!_resumeActive[chatId]) return;
+    _resumeActive[chatId] = false;
+    bar.stop();
+    const el = document.getElementById(procId);
+    if (el) el.remove();
+    if (repaint && chatId === currentChatId) selectChat(chatId);
+  };
+
+  const watch = async () => {
+    if (!_resumeActive[chatId]) return;
+    if (chatId !== currentChatId) { stopResume(false); return; }   // user navigated away
+    if (Date.now() > deadline)    { stopResume(false); return; }
+    let status = "running";
+    try {
+      const pr = await fetch(`${basePath}/api/sd_progress/${encodeURIComponent(chatId)}`);
+      if (pr.ok) status = (await pr.json()).status || "running";
+    } catch (e) { /* keep watching */ }
+    if (status === "error") {
+      const el = document.getElementById(procId);
+      if (el) el.innerHTML = `<span style="color:#c23a22;font-style:italic;">Generation failed on the other device.</span>`;
+      _resumeActive[chatId] = false; bar.stop();
+      return;
+    }
+    // The finished media is persisted as a new assistant message — repaint then.
+    try {
+      const mr = await fetch(`${basePath}/api/chats/${encodeURIComponent(chatId)}/messages`);
+      if (mr.ok) {
+        const msgs = ((await mr.json()).messages) || [];
+        const last = msgs[msgs.length - 1];
+        if (msgs.length > base && last && last.role === "assistant") { stopResume(true); return; }
+      }
+    } catch (e) { /* keep watching */ }
+    setTimeout(watch, 2500);
+  };
+  setTimeout(watch, 2500);
+}
+
+// v9.1 — Cross-device / refresh resume for a BACKGROUND LLM reply. If a local-
+// tier generation is still running server-side for this chat (started on this
+// device before a refresh, or on another device), re-attach: show the text
+// growing live, then repaint the chat with the saved reply when it finishes.
+const _resumeLLMActive = {};
+async function maybeResumeLLM(chatId) {
+  if (!chatId || String(chatId).startsWith("temp-")) return;
+  if (jarvisSending && chatId === currentChatId) return;   // a live send owns it here
+  if (_resumeLLMActive[chatId]) return;
+
+  let p0;
+  try {
+    const res = await fetch(`${basePath}/api/llm_progress/${encodeURIComponent(chatId)}`);
+    if (!res.ok) return;
+    p0 = await res.json();
+  } catch (e) { return; }
+  if (!p0 || p0.status !== "running") return;
+
+  _resumeLLMActive[chatId] = true;
+  const r = document.getElementById("r");
+  const wrapId = "llmresume_" + Date.now();
+  r.innerHTML += `<div id="${wrapId}"></div>`;
+  const paint = (inner) => {
+    const w = document.getElementById(wrapId);
+    if (w) w.innerHTML = renderJarvisBubble(inner);
+  };
+  paint('<div class="md"><em style="opacity:.7">Resuming response from another session…</em></div>');
+  scrollChatToBottom();
+
+  const deadline = Date.now() + 30 * 60 * 1000;
+  const stop = (repaint) => {
+    if (!_resumeLLMActive[chatId]) return;
+    _resumeLLMActive[chatId] = false;
+    const w = document.getElementById(wrapId);
+    if (w) w.remove();
+    if (repaint && chatId === currentChatId) selectChat(chatId);
+  };
+  const tick = async () => {
+    if (!_resumeLLMActive[chatId]) return;
+    if (chatId !== currentChatId) { stop(false); return; }
+    if (Date.now() > deadline)    { stop(false); return; }
+    let p;
+    try {
+      const res = await fetch(`${basePath}/api/llm_progress/${encodeURIComponent(chatId)}`);
+      p = await res.json();
+    } catch (e) { setTimeout(tick, 700); return; }
+    if (p.status === "running") {
+      const body = marked.parse(jarvisNormalizeMd(p.text || "")) ||
+                   '<em style="opacity:.7">…</em>';
+      paint(`<div class="md">${body}</div>`);
+      if (window.Prism) Prism.highlightAll();
+      scrollChatToBottom();
+      setTimeout(tick, 700);
+    } else if (p.status === "done") {
+      stop(true);                 // reload the chat to show the saved reply cleanly
+    } else {                      // error / idle
+      paint('<div class="md"><span style="color:#c23a22;">That response failed to finish.</span></div>');
+      _resumeLLMActive[chatId] = false;
+    }
+  };
+  setTimeout(tick, 400);
+}
+
+// Poll /api/agent_progress and repaint `procId` live. onDone(finalHtml) fires
+// once when the task finishes. Returns a control with .stop().
+function startAgentProgressPoll(procId, chatId, onDone) {
+  let stopped = false, timer = null, firedDone = false;
+  const started = Date.now();
+  const tick = async () => {
+    if (stopped) return;
+    try {
+      const res = await fetch(`${basePath}/api/agent_progress/${encodeURIComponent(chatId)}`);
+      if (res.ok) {
+        const p = await res.json();
+        const el = document.getElementById(procId);
+        if (el && p && (p.status === "running" || p.status === "done")) {
+          el.innerHTML = renderAgentProgress(p);
+          scrollChatToBottom();
+        }
+        if (p && p.status === "done" && !firedDone) {
+          firedDone = true;
+          stopped = true;
+          if (typeof onDone === "function") onDone(p.html || "");
+          return;
+        }
+      }
+    } catch (e) { /* ignore transient poll errors */ }
+    // stop polling after 15 min as a hard safety cap
+    if (!stopped && (Date.now() - started) < 15 * 60 * 1000) {
+      timer = setTimeout(tick, 1500);
+    }
+  };
+  timer = setTimeout(tick, 1000);
+  return { stop: () => { stopped = true; if (timer) clearTimeout(timer); } };
+}
+
+// v8.6 — attempt token streaming for a plain local-tier chat message.
+// Returns true if it fully handled the message (streamed + rendered), or false
+// to fall back to the normal /api/query flow (tools, agent, image, cloud tier,
+// PC offline, or the server declining to stream).
+async function tryStreamChat(procId, text) {
+  let startedStreaming = false;   // got at least one token (=> a server job is running)
+  let bubble = null;
+  const chatAtStart = currentChatId;
+  try {
+    const fd = new FormData();
+    fd.append("text", text);
+    fd.append("chat_id", currentChatId);
+    fd.append("llm_mode", `${llmConfig.activeTier}_${llmConfig[llmConfig.activeTier]}`);
+    fd.append("web_mode", llmConfig.webMode);
+    fd.append("prompt_enhance", llmConfig.imgEnhance ? "1" : "0");
+
+    const res = await fetch(`${basePath}/api/chat_stream`, { method: "POST", body: fd });
+    if (!res.ok || !res.body) return false;
+    const ctype = res.headers.get("content-type") || "";
+    if (ctype.includes("application/json")) return false;   // {stream:false} -> fall back
+
+    // Live bubble: raw text streams in (code shows as plain text until 'done',
+    // then we swap in the server-rendered HTML so code blocks/Prism/copy match).
+    const proc = document.getElementById(procId);
+    if (proc) proc.remove();
+    const rawId = "sraw_" + Date.now();
+    r.innerHTML += renderJarvisBubble(`<div id="${rawId}" style="white-space:pre-wrap; word-wrap:break-word;"></div>`);
+    const rawEl = document.getElementById(rawId);
+    bubble = rawEl.closest(".message");
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "", acc = "", finalHtml = null, spoken = null, gotError = false;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line) continue;
+        let obj; try { obj = JSON.parse(line); } catch (e) { continue; }
+        if (obj.delta) {
+          startedStreaming = true;
+          acc += obj.delta;
+          rawEl.textContent = acc;
+          scrollChatToBottom();
+        } else if (obj.done) {
+          finalHtml = obj.html; spoken = obj.spoken;
+        } else if (obj.error) {
+          gotError = true;
+        }
+      }
+    }
+
+    if ((gotError && !acc) || (!acc && !finalHtml)) {
+      if (bubble) bubble.remove();     // nothing arrived -> fall back cleanly
+      return false;
+    }
+
+    // Finalize: swap raw text for the server-rendered HTML (identical code-block
+    // styling, then Prism highlight + copy buttons), or best-effort render acc.
+    if (bubble) {
+      const html = (finalHtml && finalHtml.trim())
+        ? finalHtml
+        : marked.parse(jarvisNormalizeMd(acc));
+      bubble.outerHTML = renderJarvisBubble(html);
+      if (window.Prism) Prism.highlightAll();
+      fixLegacyMarkdown(r);
+      addCopyButtons(r);
+      scrollChatToBottom();
+    }
+    if (voiceEnabled && spoken) { try { await playTTS(spoken); } catch (e) {} }
+    return true;
+  } catch (e) {
+    // The connection dropped. If generation had already started, the server-side
+    // background job is STILL running — don't fall back to /api/query (that would
+    // double-generate). Drop the partial bubble and re-attach via the LLM resume.
+    if (startedStreaming) {
+      if (bubble) bubble.remove();
+      // defer so the send handler's releaseSend() clears jarvisSending first,
+      // otherwise maybeResumeLLM's "live send owns it" guard would bail.
+      setTimeout(() => { try { maybeResumeLLM(chatAtStart); } catch (_e) {} }, 300);
+      return true;
+    }
+    return false;   // nothing started -> safe to fall back to the normal path
+  }
+}
+
+let jarvisSending = false;   // v8.9 — one request at a time
+
+f.onsubmit = async (e) => {
+  e.preventDefault();
+
+  // A slow tier (Mac Better flushes + purges + loads 16GB before the first
+  // token) looks frozen, so Enter/Send gets pressed again and the SAME task
+  // ran twice, fighting over the Mac's memory. Ignore repeats while busy.
+  if (jarvisSending) {
+    console.warn("[Jarvis] request already in flight — ignoring duplicate submit");
+    return;
+  }
+
+  const text = i.value.trim();
+  const files = imgInput.files ? Array.from(imgInput.files) : [];
+
+  if (!text && !files.length) return;
+
+  jarvisSending = true;
+  const sendBtn = f.querySelector('button[type="submit"]') || document.getElementById('sendBtn');
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = "0.5"; }
+  const releaseSend = () => {
+    jarvisSending = false;
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ""; }
+  };
+
+  // First message of a new chat: get a real chat id up front so a dropped
+  // connection can always be recovered from the saved chat. Guest mode
+  // (not logged in) is rejected by the endpoint and simply stays temp.
+  if (String(currentChatId).startsWith("temp-")) {
+    try {
+      const cRes = await fetch(`${basePath}/api/chats`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({title: "New chat"})
+      });
+      if (cRes.ok) {
+        const cj = await cRes.json();
+        if (cj && cj.chat_id) {
+          currentChatId = cj.chat_id;
+          refreshChatList();
+        }
+      }
+    } catch (e0) { /* guest mode: continue unsaved */ }
+  }
+
+  const fileNames = files.map(x => x.name);
+  r.innerHTML += renderUserBubble(text, fileNames);
+
+  const isVision = files.some(f => f.type.startsWith('image/'));
+  const textLower = text.toLowerCase();
+  const lineCount = (text.match(/\n/g) || []).length + 1;
+  
+  const isCode = 
+    text.includes("```") || 
+    (lineCount >= 6 && ["import ", "from ", "def ", "class ", "{", "};", "#include", "<html", "</"].some(k => text.includes(k))) ||
+    (text.length > 1200 && ["def ", "import ", "class ", "return ", "function(", "=>", "{", "};"].some(k => text.includes(k))) ||
+    ["code", "program", "query", "algorithm", "script", "command", "==", "':", '":'].some(k => textLower.includes(k));
+
+  const procId = "proc_" + Date.now();
+  const procLine = (llmConfig.mode === 'agent')
+    ? `⚙ Agent processing — starting…`
+    : (llmConfig.mode === 'video')
+    ? `Generating video on ${llmConfig.videoTier === 'light' ? 'the Light PC' : llmConfig.videoTier === 'heavy' ? 'the Heavy rig' : 'the Mac'} — this can take several minutes…`
+    : buildProcessingLine(text, isVision, Boolean(isCode));
+  r.innerHTML += `<div id="${procId}" style="color:#999;font-style:italic;">${procLine}</div>`;
+
+  i.value = "";
+  if (imgInput) imgInput.value = "";
+  imgBtn.innerHTML = '<i class="fas fa-camera" style="font-size: 3em; cursor: pointer;"></i>';
+  renderAttachPreview();   // v9.0 — clear the thumbnail strip after sending
+  r.scrollTop = r.scrollHeight;
+
+  // v8.5 — agent mode streams its steps live via polling; guard so the final
+  // reply is only painted once (whichever of the fetch / poll finishes first).
+  const isAgent = (llmConfig.mode === 'agent');
+  let finalRendered = false;
+  let agentPoll = null;
+  let sdPoll = null;
+
+  // v9.0 — if this request will produce an image (image mode, or a chat message
+  // that also asks for a picture), poll SD progress and show a live bar.
+  const _wantsPic = /\b(?:generate|create|make|draw|show|produce|give)\b[^.]*\b(?:image|picture|pic|illustration|drawing|visual|render|artwork|photo|diagram)\b/i.test(text)
+                    || /\b(?:pictorial|visual|graphic)\s+(?:representation|explanation|depiction)\b/i.test(text);
+  if (!String(currentChatId).startsWith("temp-") &&
+      (llmConfig.mode === 'image' || llmConfig.mode === 'video' ||
+       (llmConfig.mode === 'chat' && _wantsPic))) {
+    sdPoll = startSdProgressPoll(procId, currentChatId);
+  }
+
+  // v8.5 — remember how many messages this chat had BEFORE we sent, so if the
+  // connection drops we can tell when the NEW reply has actually been saved
+  // (and only then remove the "processing" indicator).
+  let priorMsgCount = null;
+  if (!String(currentChatId).startsWith("temp-")) {
+    try {
+      const mr = await fetch(`${basePath}/api/chats/${encodeURIComponent(currentChatId)}/messages`);
+      if (mr.ok) priorMsgCount = ((await mr.json()).messages || []).length;
+    } catch (e) { /* best-effort; recovery still works via role check */ }
+  }
+
+  const renderFinal = (contentHtml) => {
+    if (finalRendered) return;
+    finalRendered = true;
+    if (agentPoll) agentPoll.stop();
+    if (sdPoll) sdPoll.stop();
+    const proc = document.getElementById(procId);
+    if (proc) proc.remove();
+    r.innerHTML += renderJarvisBubble(contentHtml);
+    if (window.Prism) Prism.highlightAll();
+    fixLegacyMarkdown(r);
+    addCopyButtons(r);
+    scrollChatToBottom();
+  };
+
+  // v8.6 — for a plain chat message, try token streaming first. If the server
+  // streams it, we're done; otherwise fall through to the normal /api/query flow
+  // (which handles tools, agent, image, cloud tiers, and waking a sleeping PC).
+  // v9.0 — when the prompt enhancer is ON, skip streaming so chat runs through
+  // /api/query, where the prompt is enhanced before the answer (enhancement adds
+  // a pre-step that can't be streamed anyway).
+  if (!isAgent && llmConfig.mode === 'chat' && files.length === 0 && !llmConfig.imgEnhance) {
+    const streamed = await tryStreamChat(procId, text);
+    if (streamed) { releaseSend(); return; }
+  }
+
+  if (isAgent) {
+    agentPoll = startAgentProgressPoll(procId, currentChatId, (finalHtml) => {
+      if (finalHtml && finalHtml.trim()) renderFinal(finalHtml);
+    });
+  }
+
+  try {
+    const denoiseInput = document.getElementById('denoise-strength').value;
+    const formData = new FormData();
+    // v8.2 — strict UI mode lock: tell the backend exactly which mode to use
+    formData.append("text", text);
+    formData.append("mode", llmConfig.mode);              // chat | agent | image
+    formData.append("web_mode", llmConfig.webMode);       // offline = LLM only, online = web search
+    formData.append("prompt_enhance", llmConfig.imgEnhance ? "1" : "0");  // v9.0 enhancer (all UI modes)
+    formData.append("chat_id", currentChatId);
+    const currentLlmString = `${llmConfig.activeTier}_${llmConfig[llmConfig.activeTier]}`;
+    formData.append("llm_mode", currentLlmString);
+    // v8.3 — which Cloud Better seats to query (ignored by every other tier/speed)
+    formData.append("cloud_seats", llmConfig.cloudSeats.join(","));
+    // v8.4 — which Cloud Fast seats to query (ignored by every other tier/speed)
+    formData.append("fast_seats", llmConfig.fastSeats.join(","));
+    formData.append("sd_mode", llmConfig.sdTier);
+    formData.append("agent_brain", llmConfig.agentBrain);
+    formData.append('denoise', denoiseInput);
+
+    formData.append('width', document.getElementById('img-width').value);
+    formData.append('height', document.getElementById('img-height').value);
+
+    // v9.0 — video generation params (FreeVideo on mac/heavy/light)
+    if (llmConfig.mode === 'video') {
+      formData.append('video_tier',         llmConfig.videoTier);
+      formData.append('video_width',        document.getElementById('vid-width').value);
+      formData.append('video_height',       document.getElementById('vid-height').value);
+      formData.append('video_seconds',      document.getElementById('vid-seconds').value);
+      formData.append('video_base_steps',   document.getElementById('vid-base-steps').value);
+      formData.append('video_refine_steps', document.getElementById('vid-refine-steps').value);
+      formData.append('video_two_pass',     document.getElementById('vid-two-pass').checked ? '1' : '0');
+      formData.append('video_seed',         document.getElementById('vid-seed').value);
+      // Long-video stitch (per-clip length = the Duration field)
+      formData.append('video_stitch',        document.getElementById('vid-stitch').checked ? '1' : '0');
+      formData.append('video_total_seconds', document.getElementById('vid-total-seconds').value);
+      formData.append('video_chunk_seconds', document.getElementById('vid-seconds').value);
+    }
+
+    for (const f of files) formData.append("files", f);
+
+    // Agent tasks can run well past a reverse-proxy timeout; the poll carries the
+    // live steps and the final result, so don't abort them early.
+    // Local models can be slow; don't self-abort early. If a proxy severs the
+    // connection first, the recovery poll below still keeps the indicator up and
+    // fetches the saved reply when it's ready.
+    const qAbort = new AbortController();
+    const qTimer = isAgent ? null : setTimeout(() => qAbort.abort(), 300000);
+    const d = await fetch(`${basePath}/api/query`, { method: "POST", body: formData, signal: qAbort.signal });
+    if (qTimer) clearTimeout(qTimer);
+
+    if (!d.ok) {
+      const errText = await d.text();
+      throw new Error(errText.slice(0, 200));
+    }
+
+    const j = await d.json();
+
+    // The backend now sends fully-rendered HTML (including the agent thought
+    // dropdown for agent tasks), so we prefer html_reply directly.
+    let contentHtml = "";
+    if (j.html_reply && j.html_reply.trim()) {
+      contentHtml = j.html_reply;
+    } else {
+      contentHtml = marked.parse(jarvisNormalizeMd(j.reply || ""));
+    }
+
+    renderFinal(contentHtml);
+
+    const player = document.getElementById("musicPlayer");
+    if (j.audio_url === "stop_music") {
+      player.pause();
+      player.src = "";
+      player.style.display = "none";
+    } else if (j.audio_url && j.audio_url.includes("youtube")) {
+      player.src = j.audio_url;
+      player.style.display = "block";
+      player.play().catch(err => console.warn("Autoplay blocked:", err));
+    } else if (voiceEnabled && j.text_for_tts) {
+      await playTTS(j.text_for_tts);
+    }
+
+  } catch (err) {
+    if (finalRendered) return;   // already painted by the poll — nothing to do
+
+    // v8.5 — Agent mode: the task keeps running server-side and the poll will
+    // paint the final result when it reports done, so just let it keep going.
+    if (isAgent) {
+      if (!agentPoll) {
+        agentPoll = startAgentProgressPoll(procId, currentChatId, (finalHtml) => {
+          if (finalHtml && finalHtml.trim()) renderFinal(finalHtml);
+        });
+      }
+      releaseSend();
+      return;
+    }
+
+    // Chat / image: the connection dropped (a proxy/tunnel can sever a slow
+    // request), but the backend keeps working and saves the reply to this chat.
+    // KEEP the processing indicator visible and poll the saved chat until the
+    // NEW assistant reply actually appears — only then swap it for the answer.
+    const proc = document.getElementById(procId);
+    const setProc = (msg) => {
+      const el = document.getElementById(procId);
+      if (el) el.innerHTML = `<span style="color:#999;font-style:italic;">${msg}</span>`;
+    };
+    setProc("Still processing your request……");
+
+    if (String(currentChatId).startsWith("temp-")) {
+      // guest chats aren't persisted server-side, so a dropped reply can't be
+      // recovered — say so instead of spinning forever.
+      if (proc) proc.remove();
+      r.innerHTML += `<div style="color:#999;font-style:italic;">The connection dropped and guest chats aren't saved — please resend.</div>`;
+      releaseSend();
+      return;
+    }
+
+    const base = (priorMsgCount == null) ? 0 : priorMsgCount;
+    const deadline = Date.now() + 8 * 60 * 1000;   // wait up to 8 min for slow local models
+    while (!finalRendered && Date.now() < deadline) {
+      await new Promise(s => setTimeout(s, 3000));
+      if (finalRendered) break;
+      try {
+        const mres = await fetch(`${basePath}/api/chats/${encodeURIComponent(currentChatId)}/messages`);
+        if (mres.ok) {
+          const msgs = ((await mres.json()).messages) || [];
+          const last = msgs[msgs.length - 1];
+          // reply is ready once a new message exists AND the latest is the assistant
+          if (msgs.length > base && last && last.role === "assistant") {
+            finalRendered = true;
+            const el = document.getElementById(procId);
+            if (el) el.remove();
+            await selectChat(currentChatId);   // repaint the chat, reply now present
+            break;
+          }
+        }
+      } catch (e2) { /* keep the indicator up and keep polling */ }
+    }
+    if (!finalRendered) {
+      setProc("Still working.......");
+    }
+  } finally {
+    releaseSend();
+  }
+};
+
+b.onclick = () => {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    alert('Speech recognition not supported in this browser.');
+    return;
+  }
+
+  const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new Rec();
+  rec.lang = 'en-GB';
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+
+  b.disabled = true;
+  b.innerHTML = '<i class="fas fa-ear-listen" style="font-size: 3em; cursor: pointer;"></i>';
+
+  let captured = false;
+
+  rec.onresult = (e) => {
+    captured = true;
+    const spoken = e.results[0][0].transcript.trim();
+    i.value = spoken;
+    f.requestSubmit();
+  };
+
+  rec.onerror = (e) => {
+    r.innerHTML += `<div style="color:#f55;">[Speech error: ${e.error}]</div>`;
+    b.disabled = false;
+    b.innerHTML = '<i class="fas fa-microphone" style="font-size: 3em; cursor: pointer;"></i>';
+  };
+
+  rec.onend = () => {
+    if (!captured) r.innerHTML += `<div style="color:#999;">[No speech detected]</div>`;
+    b.disabled = false;
+    b.innerHTML = '<i class="fas fa-microphone" style="font-size: 3em; cursor: pointer;"></i>';
+  };
+
+  try {
+    rec.start();
+  } catch (err) {
+    b.disabled = false;
+    b.innerHTML = '<i class="fas fa-microphone" style="font-size: 3em; cursor: pointer;"></i>';
+  }
+};
+
+const toggleBtn = document.getElementById("sidebarToggle");
+
+if (localStorage.getItem("sidebar") === "open") {
+  document.body.classList.add("sidebar-open");
+}
+
+toggleBtn.onclick = () => {
+  const isOpen = document.body.classList.toggle("sidebar-open");
+  localStorage.setItem("sidebar", isOpen ? "open" : "closed");
+};
+
+const backdrop = document.getElementById("sidebar-backdrop");
+
+backdrop.onclick = () => {
+  document.body.classList.remove("sidebar-open");
+  document.body.classList.remove("right-sidebar-open");
+  localStorage.setItem("sidebar", "closed");
+};
+
+const llmConfig = {
+  activeTier: 'mac',   // replaced on load by /api/devices -> default_tier
+  mac: 'fast',
+  light: 'fast',
+  heavy: 'fast',
+  cloud: 'fast',
+  // v8.3 — which Cloud "Better" seats get queried. 1, 2 or all 3.
+  cloudSeats: ['deepseek', 'mistral', 'nemotron'],
+  // v8.4 — which Cloud "Fast" seats get queried. 1 or both.
+  // Default is Gemini-only on load; tick Lightning in the sidebar to add it.
+  fastSeats: ['gemini'],
+  sdTier: 'mac',      // v9.0 — image mode defaults to Mac too
+  videoTier: 'mac',   // v9.0 — video device (mac/heavy/light)
+  mode: 'chat',
+  webMode: 'offline',    // 'offline' = LLM only, 'online' = DuckDuckGo web search
+  imgEnhance: false,     // v9.0 — prompt enhancer OFF by default (image/chat/agent)
+  agentBrain: 'light'    // default agent brain
+};
+
+// Syncs the active UI buttons on the quick toggle bar
+function syncQuickTierUI() {
+  const activeVal = llmConfig.mode === 'agent' ? llmConfig.agentBrain
+                  : llmConfig.mode === 'image' ? llmConfig.sdTier
+                  : llmConfig.mode === 'video' ? llmConfig.videoTier
+                  : llmConfig.activeTier;
+  document.querySelectorAll('#tierToggleSeg .brain-opt').forEach(b => {
+    b.classList.toggle('active', b.dataset.tier === activeVal);
+  });
+}
+
+// v8 — switch between Chat and Agent modes
+function setMode(mode) {
+  llmConfig.mode = mode;
+  document.querySelectorAll('#modeToggle .mode-opt').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+
+  // v8.2 — the Banana tier only applies to Image mode
+  const bananaBtn = document.getElementById('quick-tier-banana');
+  if (bananaBtn) bananaBtn.style.display = (mode === 'image') ? '' : 'none';
+  const macBtn = document.getElementById('quick-tier-mac');
+  if (macBtn) macBtn.style.display = '';   // v8.9 — Mac is a chat tier, agent brain AND SD tier
+  // v9.0 — Video runs only on mac/heavy/light, so hide Cloud in video mode
+  const cloudBtn = document.querySelector('#tierToggleSeg .brain-opt[data-tier="cloud"]');
+  if (cloudBtn) cloudBtn.style.display = (mode === 'video') ? 'none' : '';
+
+  syncQuickTierUI(); // Update the buttons based on the mode we just switched to
+
+  // Hint in the textarea
+  const t = document.getElementById('t');
+  t.placeholder = (mode === 'agent') ? "Describe a task to run on your PCs...."
+                : (mode === 'image') ? "Describe an image to generate...."
+                : (mode === 'video') ? "Describe a video to generate...."
+                : "Type whatever....";
+}
+
+// Called when clicking Light/Heavy/Cloud on the main chat interface
+function setQuickTier(tier) {
+  if (llmConfig.mode === 'agent') {
+    llmConfig.agentBrain = tier;
+  } else if (llmConfig.mode === 'image') {
+    llmConfig.sdTier = tier;            // v8.2 — Image mode picks the SD tier
+    if (typeof renderModels === 'function') renderModels();
+  } else if (llmConfig.mode === 'video') {
+    if (tier === 'mac' || tier === 'heavy' || tier === 'light') {
+      llmConfig.videoTier = tier;       // v9.0 — Video mode picks the FreeVideo device
+      if (typeof renderModels === 'function') renderModels();
+    }
+  } else {
+    llmConfig.activeTier = tier;
+    renderModels(); // Sync with the right sidebar!
+    updateLlmIndicator();
+  }
+  syncQuickTierUI();
+}
+
+// v9.0 — pick the FreeVideo device from the right-sidebar grid
+function selectVideoTier(tier) {
+  llmConfig.videoTier = tier;
+  renderModels();
+  if (llmConfig.mode === 'video') syncQuickTierUI();
+}
+
+// Make sure the right sidebar syncs BACK to the quick toggle if used in Chat mode
+function selectTier(tier) {
+  llmConfig.activeTier = tier;
+  try { if (event && event.isTrusted) localStorage.setItem('jarvisTierChosen', '1'); } catch (e) {}
+  renderModels();
+  updateLlmIndicator();
+  if (llmConfig.mode === 'chat') syncQuickTierUI();
+}
+
+// MISSING FUNCTION ADDED: Handles clicks on Stable Diffusion models in the right sidebar
+function selectSdTier(tier) {
+  llmConfig.sdTier = tier;
+  renderModels(); // This updates the visual CSS highlight in the right sidebar
+  
+  // Sync with the top toggles ONLY if we are currently in Image Mode
+  if (llmConfig.mode === 'image') {
+    syncQuickTierUI();
+  }
+}
+
+function renderModels() {
+  if (!modelsData) return;
+  
+  ['mac', 'light', 'heavy', 'cloud'].forEach(tier => {
+    const speed = llmConfig[tier];
+    const container = document.getElementById(`disp-${tier}`);
+    container.innerHTML = '';
+
+    // v8.4 — Cloud is a seat-picker in BOTH speeds now:
+    //   better -> cloudSeats (deepseek/mistral/nemotron), fast -> fastSeats (gemini/lightning)
+    const isCloudSeatPicker = (tier === 'cloud');
+    const seatList = (speed === 'better') ? llmConfig.cloudSeats : llmConfig.fastSeats;
+    const toggleFn = (speed === 'better') ? 'toggleCloudSeat' : 'toggleFastSeat';
+
+    modelsData[tier][speed].forEach(item => {
+      if (isCloudSeatPicker && item.k) {
+        const on = seatList.includes(item.k);
+        container.innerHTML +=
+          `<div class="m-badge seat-badge ${on ? 'seat-on' : 'seat-off'}"
+                onclick="${toggleFn}(event, '${item.k}')" title="${on ? 'Click to exclude' : 'Click to include'}">
+             <span class="m-title"> ${item.n}</span>${item.m}
+           </div>`;
+      } else {
+        container.innerHTML += `<div class="m-badge"><span class="m-title">${item.n}</span>${item.m}</div>`;
+      }
+    });
+
+    if (tier === 'cloud') {
+      const hint = document.getElementById('cloud-seat-hint');
+      if (hint) {
+        hint.style.display = isCloudSeatPicker ? 'block' : 'none';
+        const n = seatList.length;
+        hint.innerText = (n === 1)
+          ? 'Single model — no merge step, fastest answer'
+          : `${n} models queried in parallel, then merged`;
+      }
+    }
+
+    const row = document.getElementById(`row-${tier}`);
+    const btns = row.querySelectorAll('.s-btn');
+    btns[0].classList.toggle('active', speed === 'fast');
+    btns[1].classList.toggle('active', speed === 'better');
+    
+    row.classList.toggle('active-tier', llmConfig.activeTier === tier);
+  });
+
+  // Render Stable Diffusion Settings
+  const sdMacContainer = document.getElementById(`disp-sd-mac`);
+  if (sdMacContainer && modelsData.sd.mac) {
+      sdMacContainer.innerHTML = `<div class="m-badge" style="background: rgba(0, 210, 255, 0.1); border-color: rgba(0, 210, 255, 0.3);"><span class="m-title">Model</span>${modelsData.sd.mac}</div>`;
+  }
+  const sdHeavyContainer = document.getElementById(`disp-sd-heavy`);
+  const sdLightContainer = document.getElementById(`disp-sd-light`);
+  const sdCloudContainer = document.getElementById(`disp-sd-cloud`);
+  const sdBananaContainer = document.getElementById(`disp-sd-banana`);
+  
+  if (sdHeavyContainer) {
+      sdHeavyContainer.innerHTML = `<div class="m-badge" style="background: rgba(0, 210, 255, 0.1); border-color: rgba(0, 210, 255, 0.3);"><span class="m-title">Model</span>${modelsData.sd.heavy}</div>`;
+  }
+
+  if (sdLightContainer) {
+      sdLightContainer.innerHTML = `<div class="m-badge" style="background: rgba(0, 210, 255, 0.1); border-color: rgba(0, 210, 255, 0.3);"><span class="m-title">Model</span>${modelsData.sd.light}</div>`;
+  }
+  
+  if (sdCloudContainer) {
+      const cloudModelName = modelsData.sd.cloud || "google/imagen-4";
+      sdCloudContainer.innerHTML = `<div class="m-badge" style="background: rgba(0, 210, 255, 0.1); border-color: rgba(0, 210, 255, 0.3);"><span class="m-title">Model</span>${cloudModelName}</div>`;
+  }
+  
+  if (sdBananaContainer) {
+      sdBananaContainer.innerHTML = `<div class="m-badge" style="background: rgba(255, 204, 0, 0.1); border-color: rgba(255, 204, 0, 0.3);"><span class="m-title">Model</span>Nano Banana Pro</div>`;
+  }
+
+  document.getElementById('row-sd-mac')?.classList.toggle('active-tier', llmConfig.sdTier === 'mac');
+  document.getElementById('row-sd-heavy').classList.toggle('active-tier', llmConfig.sdTier === 'heavy');
+  document.getElementById('row-sd-light').classList.toggle('active-tier', llmConfig.sdTier === 'light');
+  document.getElementById('row-sd-cloud')?.classList.toggle('active-tier', llmConfig.sdTier === 'cloud');
+  document.getElementById('row-sd-banana')?.classList.toggle('active-tier', llmConfig.sdTier === 'banana');
+
+  // v9.0 — Video device tiles
+  const vid = (modelsData && modelsData.video) || {};
+  ['mac', 'heavy', 'light'].forEach(t => {
+    const c = document.getElementById(`disp-vid-${t}`);
+    if (c) c.innerHTML = `<div class="m-badge" style="background: rgba(0, 210, 255, 0.1); border-color: rgba(0, 210, 255, 0.3);"><span class="m-title">Model</span>${vid[t] || 'FreeVideo'}</div>`;
+    document.getElementById(`row-vid-${t}`)?.classList.toggle('active-tier', llmConfig.videoTier === t);
+  });
+}
+
+// v8.3/8.4 — shared seat toggle. Include/exclude a Cloud seat, always leaving
+// at least one selected. `which` is 'better' (cloudSeats) or 'fast' (fastSeats).
+function _toggleSeat(event, key, which) {
+  event.stopPropagation();
+  const isBetter = (which === 'better');
+  const seats = isBetter ? llmConfig.cloudSeats : llmConfig.fastSeats;
+  const order = isBetter ? ['deepseek', 'mistral', 'nemotron'] : ['gemini', 'lightning'];
+  const idx = seats.indexOf(key);
+
+  if (idx > -1) {
+    if (seats.length === 1) {
+      const hint = document.getElementById('cloud-seat-hint');
+      if (hint) {
+        hint.innerText = 'At least one model must stay selected, sir.';
+        hint.classList.add('seat-warn');
+        setTimeout(() => { hint.classList.remove('seat-warn'); renderModels(); }, 1600);
+      }
+      return; // refuse to remove the last seat
+    }
+    seats.splice(idx, 1);
+  } else {
+    seats.push(key);
+  }
+
+  // Keep canonical order so backend logs read consistently
+  const ordered = order.filter(k => seats.includes(k));
+  if (isBetter) { llmConfig.cloudSeats = ordered; llmConfig.cloud = 'better'; }
+  else          { llmConfig.fastSeats  = ordered; llmConfig.cloud = 'fast';   }
+
+  // Picking a seat implies Cloud is the active tier
+  llmConfig.activeTier = 'cloud';
+  renderModels();
+  updateLlmIndicator();
+  if (llmConfig.mode === 'chat') syncQuickTierUI();
+}
+
+function toggleCloudSeat(event, key) { _toggleSeat(event, key, 'better'); }
+function toggleFastSeat(event, key)  { _toggleSeat(event, key, 'fast');   }
+
+function setSpeed(event, tier, speed) {
+  event.stopPropagation(); 
+  llmConfig[tier] = speed;
+  llmConfig.activeTier = tier; 
+  renderModels();
+  updateLlmIndicator();
+  // v8.4 — clicking Fast/Better also moves the active tier, so the floating
+  // quick-tabs at the bottom must re-sync too. Previously only clicking the
+  // whole tile did this, so the bottom bar lagged behind the sidebar.
+  if (llmConfig.mode === 'chat') syncQuickTierUI();
+}
+
+document.getElementById("rightSidebarToggle").onclick = () => {
+  document.body.classList.toggle("right-sidebar-open");
+};
+
+async function initializeModels() {
+  try {
+    const res = await fetch(`${basePath}/api/models_info`);
+    if (!res.ok) throw new Error("Failed to load model config");
+    
+    modelsData = await res.json();
+    renderModels(); 
+  } catch (err) {
+    console.error("[UI] Error loading dynamic model configurations:", err);
+  }
+}
+
+initializeModels();
+
+function toggleHeaderMenu() { document.getElementById('headerDropdownMenu').classList.toggle('show'); }
+window.onclick = function(e) { if (!e.target.closest('.header-dropdown-container')) { document.querySelectorAll('.header-dropdown-menu').forEach(d => d.classList.remove('show')); } }
+function navTo(path) { if (path === '') { window.location.href = basePath || '/'; } else { window.location.href = basePath + path; } }
+// Header shortcuts come from .env (FILES_URL_*, DASHBOARD_URL_*, HA_URL_*):
+// the LAN address when you're on the home network, the public one otherwise.
+function _onLan() {
+  const h = window.location.hostname;
+  return h === 'localhost' || /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h) || h.endsWith('.local');
+}
+function _openLink(key) {
+  const l = (JARVIS_CFG.links || {})[key] || {};
+  const url = (_onLan() ? (l.lan || l.public) : (l.public || l.lan)) || '';
+  if (url) window.open(url, '_blank');
+  else alert('This shortcut is not configured. Set it in .env (see .env.example).');
+}
+function goToCloud() { _openLink('files'); }
+function goToOS()    { _openLink('dashboard'); }
+function goToHA() {
+  if (window.location.pathname.includes('/api/hassio_ingress')) { window.open('/', '_blank'); return; }
+  _openLink('home_assistant');
+}
+
+function updateLlmIndicator() {
+  const tier = llmConfig.activeTier;      
+  const speed = llmConfig[tier];           
+  
+  const iconSpan = document.getElementById(`status-${tier}`);
+  const icon = iconSpan ? iconSpan.innerText : '⚪';
+  
+  const displayTier = devName(tier);
+  const displaySpeed = speed.charAt(0).toUpperCase() + speed.slice(1);
+  
+  const indicator = document.getElementById('llm-indicator');
+  if (indicator) {
+    // v8.4 — show how many seats are in play for either Cloud speed
+    let seatTag = '';
+    if (tier === 'cloud') {
+      const n = (speed === 'better') ? llmConfig.cloudSeats.length : llmConfig.fastSeats.length;
+      seatTag = ` x${n}`;
+    }
+    indicator.innerText = `${displayTier} - ${displaySpeed}${seatTag} - ${icon}`;
+  }
+}
+
+async function rebuildSystem() {
+  const confirmed = confirm("Sir, are you sure you want to reboot me? I will be temporarily offline.");
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`${basePath}/api/system/rebuild`, { method: "POST" });
+    if (res.ok) {
+      alert("Reboot sequence initiated. Please wait about a minute before refreshing the page.");
+    } else {
+      alert("Error: Reboot command failed to execute.");
+    }
+  } catch (err) {
+    console.error("[UI] Rebuild failed:", err);
+    alert("Network error: Could not reach the server.");
+  }
+}
+</script>
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+# docker compose up -d      (after `python setup.py` has written .env)
+services:
+  jarvis:
+    build: .
+    container_name: jarvis
+    restart: unless-stopped
+    env_file: .env
+    # host networking lets Jarvis ping your PCs, send Wake-on-LAN and reach
+    # LAN services exactly as if it ran on the host
+    network_mode: host
+    volumes:
+      - ./data:/app/data                 # chats + memory (set the DB paths below)
+      - ./config:/app/config:ro          # optional JSON configs
+      - ./generated:/app/generated
+      # - /path/to/certs:/certs:ro       # then SSL_CERT_FILE=/certs/cert.pem ...
+      # - ~/.ssh:/root/.ssh:ro           # only if you use DEVICEn_SSH_USER / FILE_SEARCH_SSH_HOST
+    environment:
+      MEMORY_DB_PATH: /app/data/jarvis_memory.db
+      JARVIS_DB_PATH: /app/data/jarvis.db
+    # Voice loop needs the server's microphone/speaker:
+    # devices:
+    #   - /dev/snd:/dev/snd

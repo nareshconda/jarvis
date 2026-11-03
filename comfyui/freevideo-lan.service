@@ -1,0 +1,38 @@
+# freevideo-lan.service — auto-start FreeVideo's ComfyUI on the LAN at boot.
+#
+# This is a systemd *user* service so it runs without root and keeps JARVIS's
+# raw ComfyUI endpoint (0.0.0.0:8188) up every time the headless light PC boots
+# — including after JARVIS wakes it over the network (Wake-on-LAN). Because the
+# box is headless, enable lingering so the service starts at boot without a
+# login:  sudo loginctl enable-linger $USER
+#
+# Install:
+#   mkdir -p ~/.config/systemd/user
+#   cp freevideo-lan.service ~/.config/systemd/user/
+#   cp start_freevideo_lan.sh ~/FreeVideo/ && chmod +x ~/FreeVideo/start_freevideo_lan.sh
+#   sudo loginctl enable-linger $USER
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now freevideo-lan.service
+#
+# Check / follow:
+#   systemctl --user status freevideo-lan.service
+#   journalctl --user -u freevideo-lan.service -f
+
+[Unit]
+Description=FreeVideo ComfyUI (LAN :8188) for JARVIS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# %h expands to the service user's home directory.
+ExecStart=%h/FreeVideo/start_freevideo_lan.sh
+Restart=on-failure
+RestartSec=5
+# Give the GPU stack / model load room on a cold boot before systemd gives up.
+TimeoutStartSec=0
+# If you ever need low-VRAM mode, uncomment:
+# Environment=FREEVIDEO_EXTRA_ARGS=--lowvram
+
+[Install]
+WantedBy=default.target

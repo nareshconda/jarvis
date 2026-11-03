@@ -1,0 +1,12 @@
+.git
+.env
+*.db
+__pycache__
+generated
+recordings
+docs
+k8s
+pc_agent
+mac
+comfyui
+scripts
