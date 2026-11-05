@@ -37,7 +37,7 @@ Each feature turns on when you fill in its settings in `.env`; anything left emp
 **1. Get the code and configure it**
 
 ```bash
-git clone https://github.com/<you>/jarvis.git && cd jarvis
+git clone https://github.com/nareshconda/jarvis.git && cd jarvis
 python3 setup.py            # guided: users, devices (scans each Ollama for models), keys, integrations
 ```
 
