@@ -23,7 +23,7 @@ Each feature turns on when you fill in its settings in `.env`; anything left emp
 
 ```
              ┌──────────── your LAN ────────────┐
- phone/PC ─▶│  Jarvis server (Pi / NAS / box)  │──▶ cloud APIs (optional)
+ phone/PC ─▶ │  Jarvis server (Pi / NAS / box)  │──▶ cloud APIs (optional)
  browser     │   ├─ Ollama on PC 1  (slot heavy)│
              │   ├─ Ollama on PC 2  (slot light)│
              │   ├─ Ollama on a Mac (slot mac)  │
